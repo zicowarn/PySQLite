@@ -7354,7 +7354,7 @@ class MainFrame(wx.Frame):
     
     def __init__(self, parent):
         
-        wx.Frame.__init__(self, parent, wx.ID_ANY, 'Opticam SQLite Manager 1.0', size=(960, 650))
+        wx.Frame.__init__(self, parent, wx.ID_ANY, 'SQLite Manager 1.0', size=(960, 650))
         self.CenterOnScreen()
         self.iNewPreviewPageUniqueID = 1
         self.dictNewPreviewPageInfos = {}
