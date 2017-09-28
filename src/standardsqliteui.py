@@ -17,11 +17,11 @@
 
 __author__ = 'Zhichao Wang'
 __email__ = 'ziccowarn@gmail.com'
-__version__ = '0.1'
+__version__ = '1.2'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2017-09-18'
+__updated__ = '2017-09-28'
 
 
 
@@ -56,7 +56,7 @@ DEFAULT_TRANSLATION_DICT = {
                                     1002:u"Nicht auswählen",
                                     1003:u"Auswählen",
                                     1004:u"Nicht auswählen",
-                                    1005:u"Vorschauen",
+                                    1005:u"Tabelle vorschauen",
                                     1006:u"Migriere von links nach rechts",
                                     1007:u"Migriere von rechts nach links",
                                     1008:u"Fehler: Das ZIEL ist nicht existiert",
@@ -95,14 +95,24 @@ DEFAULT_TRANSLATION_DICT = {
                                     1041:u"Das ist %s Tab",
                                     1042:u"Unbekanntes Tab",
                                     1043:u"SQL Quelle: ",
-                                    1044:u"Herzlich Willkommen"
+                                    1044:u"Herzlich Willkommen",
+                                    1045:u"Tabelle umbenennen",
+                                    1046:u"Geben Sie den neuen Namen der Tabelle ein",
+                                    1047:u"Tabelle löschen",
+                                    1048:u"Sind Sie sicher, dass Sie die folgende(n) Tabelle(n) löschen: ",
+                                    1049:u"Sind Sie sicher, dass Sie die folgende(n) Zeile(n) löschen: \nmit der Bindigung unique_index = ",
+                                    1050:u"Ausgewählte löschen",
+                                    1051:u"Zeile(n) als CSV kopieren",
+                                    1052:u"Zeile(n) als CSV (MS-Excel) kopieren",
+                                    1053:u"Zeile(n) als SQL kopieren",
+                                    1054:u"Zelle(n) kopieren",
                                      },
                             "044" : {
                                     1001:u"Check all",
                                     1002:"Uncheck all",
                                     1003:"Check",
                                     1004:"Uncheck",
-                                    1005:"View",
+                                    1005:"View table",
                                     1006:"Migrate left to right",
                                     1007:"Migrate right to left",
                                     1008:"Error: The DESTINATION not exist",
@@ -121,8 +131,8 @@ DEFAULT_TRANSLATION_DICT = {
                                     1021:u"Select tables to import",
                                     1022:u"Preview-Tab",
                                     1023:u"Error: Can not import the selected tables:",
-                                    1024:u"SQL-Ziel:",
-                                    1025:u"Select a sqlite database",
+                                    1024:u"SQL-Destination:",
+                                    1025:u"Select a SQLite database",
                                     1026:u"Close",
                                     1027:u"Close this frame",
                                     1028:u"File",
@@ -141,14 +151,24 @@ DEFAULT_TRANSLATION_DICT = {
                                     1041:u"This ist %s Tab",
                                     1042:u"Unknown Tab",
                                     1043:u"SQL Source: ",
-                                    1044:u"Welcome"
+                                    1044:u"Welcome",
+                                    1045:u"Rename table",
+                                    1046:u"Please give the new name of the table",
+                                    1047:u"Drop table",
+                                    1048:u"Please confirm, the selected tables will be dropped： ",
+                                    1049:u"Please confirm, the selected record will be dropped：  \nwith condition unique_index = ",
+                                    1050:u"Delete Record",
+                                    1051:u"Copy Row(s) as CSV",
+                                    1052:u"Copy Row(s) as CSV (MS-Excel)",
+                                    1053:u"Copy Row(s) as SQL",
+                                    1054:u"Cell",
                                      },
                             "086" : {
                                     1001:u"全部勾选",
                                     1002:u"全部取消",
                                     1003:u"选择",
                                     1004:u"取消",
-                                    1005:u"查看",
+                                    1005:u"查看表格",
                                     1006:u"迁移 从左至右",
                                     1007:u"迁移从右至左",
                                     1008:u"错误： 该<目的地>不存在 \n",
@@ -187,7 +207,17 @@ DEFAULT_TRANSLATION_DICT = {
                                     1041:u"这是  %s 页",
                                     1042:u"未知页",
                                     1043:u"数据库  源： ",
-                                    1044:u"欢迎"
+                                    1044:u"欢迎",
+                                    1045:u"重命名表格",
+                                    1046:u"请输入新的名字为所选择的表格",
+                                    1047:u"删除表格",
+                                    1048:u"确定删除所选表格： ",
+                                    1049:u"确定删除所选条目，限制条件为\n: unique_index = ",
+                                    1050:u"删除该条目",
+                                    1051:u"复制该条目 格式CSV",
+                                    1052:u"复制该条目 格式CSV(兼容 MS Excel)",
+                                    1053:u"复制该条目 格式SQL",
+                                    1054:u"复制该单元格",
                                      }
                             }
 
@@ -5728,6 +5758,7 @@ myQR = PyEmbeddedImage(
     "pOajoVqKrL/ThUyMahpSuUavTHMQFwXvXl9fS5MiTgQOPl9DCnU6+nqCz96/fx/PGC4mQrtV"
     "VUHCDsPgvQd/M3NRWBf9aBAgRTPi/wHWNqe47ThjkAAAAABJRU5ErkJggg==")
 
+
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
@@ -6149,29 +6180,53 @@ class SQLiteTableUIGridStandard(wx.grid.Grid):
         wx.grid.Grid.__init__(self, *args, **kwargs)
         self.listSelectedItems = []
         
-        self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnCellLeftClicked)
+        self.isCtrlKeyHolding = False
+        # self.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnCellLeftClicked)
+        self.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSTDCellLeftSelected)
+        # self.Bind(wx.grid.EVT_GRID_CMD_SELECT_CELL, self.OnCMDCellLeftSelected)
+        
+        self.Bind(wx.EVT_KEY_DOWN, self.OnTasteKeyDown)
+        self.Bind(wx.EVT_KEY_UP, self.OnTasteKeyUp)
+        
+    
+    def OnTasteKeyDown(self, event):
+        if event.KeyCode == wx.WXK_CONTROL:
+            self.isCtrlKeyHolding = True
+        event.Skip()
+    
+    def OnTasteKeyUp(self, event):
+        if event.KeyCode == wx.WXK_CONTROL:
+            self.isCtrlKeyHolding = False
+        event.Skip()
     
     def OnCellLeftClicked(self, event):
+        if self.isCtrlKeyHolding:
+            listSelectedRows = self.GetSelectedRows()
+            if event.GetCol() == 0 and listSelectedRows:
+                self.SelectRow(event.GetRow(), True)
+                # 
+                event.Skip()
+            else:
+                if self.IsSelection():
+                    # self.SelectBlock(event.GetRow(), event.GetCol(), event.GetRow(), event.GetCol(), True)
+                    event.Skip()
+                else:
+                    event.Skip()
+        else:
+            event.Skip()
+        
+    def OnSTDCellLeftSelected(self, event):
         if event.GetCol() == 0:
             self.SelectRow(event.GetRow())
             event.Skip()
         else:
+            self.SelectBlock(event.GetRow(), event.GetCol(), event.GetRow(), event.GetCol())
             event.Skip()
-                
-    def GetAllSelectionIndex(self):
-        for x in xrange(0, self.GetItemCount(), 1):
-            # if not self.GetItem(x).GetImage():
-            self.Select(x, on=0)
+        
+    def OnCMDCellLeftSelected(self, event):
+        pass
     
-    def ClearAllRows(self):
-        self.DeleteAllItems()
     
-    def ClearAllSelection(self):
-        for x in xrange(0, self.GetItemCount(), 1):
-            # if not self.GetItem(x).GetImage():
-            self.Select(x, on=0) 
-
-
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
 class SQLiteUISplitterWindow(wx.SplitterWindow):
     def __init__(self, *args, **kwargs):
@@ -6996,7 +7051,7 @@ class SQLPreviewPage(wx.Panel):
         ##### SQLite Datenbank "open file" button
         self.fbOpenDatenbank = filebrowse.FileBrowseButton(
             self, -1, size=(-1, -1),
-            labelText=GetTranslationText(1024, "SQL Destination: "),
+            labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
             fileMask="sqlite (*.SQLite)|*.sqlite",
             changeCallback=self.OnOpenDatenbankCallBacked)
@@ -7043,11 +7098,19 @@ class SQLPreviewPage(wx.Panel):
                     # make a menu
                     if not hasattr(self, "popupIDView"):
                         self.popupIDView = wx.NewId()
+                        self.popupIDRename = wx.NewId()
+                        self.popupIDDrop = wx.NewId()
                         self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
+                        self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
+                        self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
                     
                     menu = wx.Menu()
                     itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
+                    itemRename = wx.MenuItem(menu, self.popupIDRename, GetTranslationText(1045, "Rename table"))
+                    itemDrop = wx.MenuItem(menu, self.popupIDDrop, GetTranslationText(1047, "Rename table"))
                     menu.AppendItem(itemView)
+                    menu.AppendItem(itemRename)
+                    menu.AppendItem(itemDrop)
                     # add some other items
                     self.PopupMenu(menu)
                     menu.Destroy()
@@ -7056,7 +7119,71 @@ class SQLPreviewPage(wx.Panel):
                     event.Skip()
             else:
                 event.Skip()
+                
+    def OnMenuDropSelected(self, event):
+        if self.listCtrl.GetSelectedItemCount() == 1:
+            # get old sqlite table name
+            index = self.listCtrl.GetFirstSelected()
+            dropSQliteTable = self.listCtrl.GetItem(index, 0).GetText()
+            
+            message = GetTranslationText(1048, 'Please confirm, the selected tables will be dropped： ')
+            message += "\n " + dropSQliteTable
+            
+            dlg = wx.MessageDialog(self, message, GetTranslationText(1013, "Info"), wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
+
+            if dlg.ShowModal() == wx.ID_OK:
+                if DEBUG_STDOUT: print 'You delete: %s\n' % dropSQliteTable
+                if dropSQliteTable != "":
+                    # delete sqlite table on list ctrl
+                    if self.DropSQLTable(strDropTable=dropSQliteTable):
+                        self.listCtrl.DeleteItem(index)
+                        dlg.Destroy()
+                        return True
+                    else:
+                        dlg.Destroy()
+                        return False
+                else:
+                    dlg.Destroy()
+                    return True
+            else:
+                dlg.Destroy()
+                return True
+        else:
+            return False
     
+    def OnMenuRenameSelected(self, event):
+        if self.listCtrl.GetSelectedItemCount() == 1:
+            # get old sqlite table name
+            index = self.listCtrl.GetFirstSelected()
+            oldSqltableName = self.listCtrl.GetItem(index, 0).GetText()
+            
+            dlg = wx.TextEntryDialog(
+                self, GetTranslationText(1046, 'Please give your the new name of the selected table'),
+                GetTranslationText(1013, 'Info'))
+
+            dlg.SetValue(oldSqltableName)
+            dlg.GetChildren()[1].SelectAll()
+
+            if dlg.ShowModal() == wx.ID_OK:
+                if DEBUG_STDOUT: print 'You entered: %s\n' % dlg.GetValue()
+                newSqltableName = dlg.GetValue()
+                if newSqltableName.lower() != oldSqltableName.lower():
+                    # reset sqlite table on list ctrl
+                    if self.RenameSQLTable(newSqltableName, oldSqltableName):
+                        self.listCtrl.SetStringItem(index, 0, newSqltableName)
+                        dlg.Destroy()
+                        return True
+                    else:
+                        dlg.Destroy()
+                        return False
+                else:
+                    dlg.Destroy()
+                    return True
+            else:
+                dlg.Destroy()
+                return True
+        else:
+            return False
     
     def OnMenuViewSelected(self, event):
         """
@@ -7103,7 +7230,109 @@ class SQLPreviewPage(wx.Panel):
             except:
                 return False
         else:
-            pass
+            return False
+    
+    
+    def RenameSQLTable(self, strNewTable="", strOldTable=""):
+        if strNewTable == "" or strOldTable == "":
+            return False
+        else:
+            for sql in self.TransactionSQLTableRename(strNewTable=strNewTable, strExpertTable=strOldTable):
+                self.ExecuteWithSQL(sql)
+            return True
+    
+    def DropSQLTable(self, strDropTable=""):
+        if strDropTable == "":
+            return False
+        else:
+            for sql in self.TransactionSQLTableDrop(strDropTable=strDropTable):
+                self.ExecuteWithSQL(sql)
+            return True
+    
+    def TransactionSQLTableRename(self, strNewTable="", strExpertTable=""):
+        """
+        Returns an iterator to the dump of the database in an SQL text format.
+        Used to produce an SQL dump of the database.  Useful to save an in-memory
+        database for later restoration.  This function should not be called
+        directly but instead called from the Connection method, iterdump().
+        """
+
+        yield('BEGIN TRANSACTION;')
+     
+
+        if strNewTable == "":
+            q = 'DROP TABLE IF EXISTS "%s";' % strExpertTable;
+        else:
+            q = 'DROP TABLE IF EXISTS "%s";' % strNewTable;
+        yield(q)
+        
+        # sqlite_master table contains the SQL CREATE statements for the database.
+        q = """
+           SELECT name, type, sql
+            FROM sqlite_master
+                WHERE sql NOT NULL AND
+                type == 'table' AND
+                name == :table_name
+            """
+        schema_res = self.curs.execute(q, {'table_name': strExpertTable})
+        for table_name, dummy_type, sql in schema_res.fetchall():
+            if table_name == 'sqlite_sequence':
+                yield('DELETE FROM sqlite_sequence;')
+            elif table_name == 'sqlite_stat1':
+                yield('ANALYZE sqlite_master;')
+            elif table_name.startswith('sqlite_'):
+                continue
+            else:
+                if strNewTable == "":
+                    yield('%s;' % sql)
+                else:
+                    yield('%s;' % sql.replace(strExpertTable, strNewTable))
+    
+            # Build the insert statement for each row of the current table
+            res = self.curs.execute("PRAGMA table_info('%s')" % table_name)
+            column_names = [str(table_info[1]) for table_info in res.fetchall()]
+            q = "SELECT 'INSERT INTO \"%(tbl_name_new)s\" VALUES("
+            q += ", ".join(["'||quote(" + col + ")||'" for col in column_names])
+            q += ")' FROM '%(tbl_name_old)s'"
+            if strNewTable == "":
+                query_res = self.curs.execute(q % {'tbl_name_new': strExpertTable, 'tbl_name_old': strExpertTable})
+            else:
+                query_res = self.curs.execute(q % {'tbl_name_new': strNewTable, 'tbl_name_old': strExpertTable})
+            for row in query_res:
+                yield("%s;" % row[0])
+        
+        # drop the old table
+        q = 'DROP TABLE IF EXISTS "%s";' % strExpertTable;
+        yield(q)
+
+        # commit the transaction
+        yield('COMMIT;')
+        
+    def TransactionSQLTableDrop(self, strDropTable=""):
+        """
+        Returns an iterator to the dump of the database in an SQL text format.
+        Used to produce an SQL dump of the database.  Useful to save an in-memory
+        database for later restoration.  This function should not be called
+        directly but instead called from the Connection method, iterdump().
+        """
+        # begin the transaction
+        yield('BEGIN TRANSACTION;')
+        
+        # sql quary
+        q = 'DROP TABLE IF EXISTS "%s";' % strDropTable;
+        yield(q)
+
+        # commit the transaction
+        yield('COMMIT;')
+    
+    def ExecuteWithSQL(self, sql=""):
+        """
+        """
+        try:
+            self.curs.execute(sql)
+            return True
+        except sqlite3.OperationalError:
+            return False
         
     def GetTableTypeByTableName(self, strTable=""):
         if strTable.isupper():
@@ -7132,7 +7361,157 @@ class NewPreviewPage(wx.Panel):
         
         self.ConnectSQLite()
         self.InitListCtrlColumns()
+        self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
         wx.FutureCall(0, self.InitListCtrlColumnsValues)
+        
+
+    def OnContextMenu(self, event):
+
+        # only do this part the first time so the events are only bound once
+        #
+        # Yet another anternate way to do IDs. Some prefer them up top to
+        # avoid clutter, some prefer them close to the object of interest
+        # for clarity.
+        isShowCopyRows = False
+        iRow = event.GetRow()
+        listSelectedRows = self.MyGrid.GetSelectedRows()
+        
+        if not listSelectedRows:
+            # empty, single cell selceted
+            self.MyGrid.ClearSelection()
+            self.MyGrid.SelectBlock(event.GetRow(), event.GetCol(), event.GetRow(), event.GetCol())
+            self.MyGrid.SetGridCursor(event.GetRow(), event.GetCol())
+            isShowCopyRows = False
+        elif iRow in listSelectedRows:
+            isShowCopyRows = True
+        else:
+            # cell and other rows selected at same time, and the cell'row was not selected
+            self.MyGrid.ClearSelection()
+            self.MyGrid.SelectBlock(event.GetRow(), event.GetCol(), event.GetRow(), event.GetCol())
+            self.MyGrid.SetGridCursor(event.GetRow(), event.GetCol())
+            isShowCopyRows = False
+            
+        # make a menu
+        if not hasattr(self, "popupIDRowCopyCSV"):
+            self.popupIDDelRecord = wx.NewId()
+            self.popupIDRowCopyCSV = wx.NewId()
+            self.popupIDRowCopyCSVMS = wx.NewId()
+            self.popupIDRowCopySQL = wx.NewId()
+            self.popupIDCellCopySTD = wx.NewId()
+            self.Bind(wx.EVT_MENU, self.OnRowDelete, id=self.popupIDDelRecord)
+            self.Bind(wx.EVT_MENU, self.OnRowCopyAsCSV, id=self.popupIDRowCopyCSV)
+            self.Bind(wx.EVT_MENU, self.OnRowCopyAsCSVMS, id=self.popupIDRowCopyCSVMS)
+            self.Bind(wx.EVT_MENU, self.OnRowCopyAsSQL, id=self.popupIDRowCopySQL)
+            self.Bind(wx.EVT_MENU, self.OnCellCopyAsSTD, id=self.popupIDCellCopySTD)
+        
+        menu = wx.Menu()
+        itemRowDelete = wx.MenuItem(menu, self.popupIDDelRecord, GetTranslationText(1050, "Delete Record"))
+        itemRowCopyAsCSV = wx.MenuItem(menu, self.popupIDRowCopyCSV, GetTranslationText(1051, "Copy Row(s) as CSV"))
+        itemRowCopyAsCSVMS = wx.MenuItem(menu, self.popupIDRowCopyCSVMS, GetTranslationText(1052, "Copy Row(s) as CSV (MS-Excel)"))
+        itemRowCopyAsSQL = wx.MenuItem(menu, self.popupIDRowCopySQL, GetTranslationText(1053, "Copy Row(s) as SQL"))
+        itemCellCopyAsSTD = wx.MenuItem(menu, self.popupIDCellCopySTD, GetTranslationText(1054, "Copy Cell"))
+        if isShowCopyRows : menu.AppendItem(itemRowDelete)
+        if isShowCopyRows : menu.AppendItem(itemRowCopyAsCSV)
+        if isShowCopyRows : menu.AppendItem(itemRowCopyAsCSVMS)
+        if isShowCopyRows : menu.AppendItem(itemRowCopyAsSQL)
+        menu.AppendItem(itemCellCopyAsSTD)
+        # add some other items
+        self.PopupMenu(menu)
+        menu.Destroy()
+        event.Skip()
+    
+    def OnRowDelete(self, event):
+        iCursorRow = self.MyGrid.GetGridCursorRow()
+        iIndex = self.MyGrid.GetCellValue(iCursorRow, 0)
+        message = GetTranslationText(1049, 'Please confirm, the selected record will be dropped：  \nwith condition unique_index = ')
+        message += "<%s> from %s \n " % (iIndex, self.sqltable)
+        
+        dlg = wx.MessageDialog(self, message, GetTranslationText(1013, "Info"), wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.DeleteRecordFromSQLiteTableByIndex(iIndex)
+            self.MyGrid.DeleteRows(iCursorRow)
+            event.Skip()
+    
+        dlg.Destroy()
+        event.Skip()
+        
+              
+    def OnRowCopyAsCSV(self, event):
+        iCursorRow = self.MyGrid.GetGridCursorRow()
+        iNumberOfCols = self.MyGrid.GetNumberCols()
+        listValues = []
+        for iCol in range(iNumberOfCols):
+            listValues 
+            strValue = self.MyGrid.GetCellValue(iCursorRow, iCol)
+            if strValue == "None":
+                listValues.append(u"")
+            else:
+                listValues.append(strValue)
+                
+        strRt = ", ".join('"{0}"'.format(val) for val in listValues)
+        strCellData = strRt.replace('""', '')
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strCellData)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        event.Skip()
+        
+        
+    def OnRowCopyAsCSVMS(self, event):
+        iCursorRow = self.MyGrid.GetGridCursorRow()
+        iNumberOfCols = self.MyGrid.GetNumberCols()
+        listValues = []
+        for iCol in range(iNumberOfCols):
+            listValues 
+            strValue = self.MyGrid.GetCellValue(iCursorRow, iCol)
+            if strValue == "None":
+                listValues.append(u"")
+            else:
+                listValues.append(strValue)
+                
+        strRt = " ".join('"{0}"\t'.format(val) for val in listValues)
+        strCellData = strRt.replace('""', '')
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strCellData)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        event.Skip()
+        
+    def OnRowCopyAsSQL(self, event):
+        iCursorRow = self.MyGrid.GetGridCursorRow()
+        iNumberOfCols = self.MyGrid.GetNumberCols()
+        listValues = []
+        for iCol in range(iNumberOfCols):
+            listValues 
+            strValue = self.MyGrid.GetCellValue(iCursorRow, iCol)
+            if strValue == "None":
+                listValues.append(u"")
+            else:
+                listValues.append(strValue)
+                
+        strRt = ", ".join('"{0}"'.format(val) for val in listValues)
+        strCellData = strRt.replace('""', 'null')
+        sqlQueryExample = 'INSERT INTO "Your table name" VALUES (' + strCellData + ');'
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(sqlQueryExample)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        event.Skip()
+        
+    def OnCellCopyAsSTD(self, event):
+        iCursorRow = self.MyGrid.GetGridCursorRow()
+        iCursorColumn = self.MyGrid.GetGridCursorCol()
+        strCellData = self.MyGrid.GetCellValue(iCursorRow, iCursorColumn)
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strCellData)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        event.Skip()
         
     def ConnectSQLite(self):
         try:
@@ -7226,7 +7605,14 @@ class NewPreviewPage(wx.Panel):
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
-
+            
+    
+    def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
+        # Build the insert statement for each row of the current table
+        # Build the insert statement for each row of the current table
+        res = self.curs.execute("DELETE FROM %s WHERE  unique_index = %s" % (self.sqltable, indexOfDelete))
+        self.conn.commit()
+        return res
 
 class AboutInfoHtmlWindow(wx.html.HtmlWindow):
     def __init__(self, parent):
@@ -7332,7 +7718,6 @@ class AboutHelpDialog(wx.Dialog):
         
         # QRCode
         boxH = wx.BoxSizer(wx.HORIZONTAL)
-        
         img = myQR.GetImage()
         img = img.Scale(200, 200)
         image = wx.StaticBitmap(self, -1, wx.BitmapFromImage(img), pos=wx.DefaultPosition, size=(205, 205))
@@ -7354,7 +7739,7 @@ class MainFrame(wx.Frame):
     
     def __init__(self, parent):
         
-        wx.Frame.__init__(self, parent, wx.ID_ANY, 'Opticam SQLite Manager 1.0', size=(960, 650))
+        wx.Frame.__init__(self, parent, wx.ID_ANY, 'Opticam SQLite Manager 1.2', size=(960, 650))
         self.CenterOnScreen()
         self.iNewPreviewPageUniqueID = 1
         self.dictNewPreviewPageInfos = {}
@@ -7548,6 +7933,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-    
-
