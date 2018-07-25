@@ -5776,7 +5776,10 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.HitTest(event.GetPosition())
+        if hasattr(event, "GetPosition"):
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        else: # when the os is mac osx, the event object has not attribute Getposition
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
             # select more 
@@ -5985,7 +5988,10 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.HitTest(event.GetPosition())
+        if hasattr(event, "GetPosition"):
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        else: # when the os is mac osx, the event object has not attribute Getposition
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
             # select more 
@@ -6862,7 +6868,10 @@ class SQLImportPage(wx.Panel):
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        if hasattr(event, "GetPosition"):
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        else: # when the os is mac osx, the event object has not attribute Getposition
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
             if self.listCtrl.GetSelectedItemCount() == 1:
@@ -6904,6 +6913,7 @@ class SQLImportPage(wx.Panel):
             newPage = NewPreviewPage(self.Parent, id=idPage, conn=self.conn, curs=self.curs,
                                       sqltable=sqltable, sqlitepath=self.strSQLitePath)
             self.Parent.AddPage(newPage, strTabName, True)
+            self.Parent.Refresh()
             return True
         else:
             return False
@@ -7090,7 +7100,10 @@ class SQLPreviewPage(wx.Panel):
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        if hasattr(event, "GetPosition"):
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        else: # when the os is mac osx, the event object has not attribute Getposition
+            iColumn, _dummyX = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
             if self.listCtrl.GetSelectedItemCount() == 1:
@@ -7205,6 +7218,7 @@ class SQLPreviewPage(wx.Panel):
             newPage = NewPreviewPage(self.Parent, id=idPage, conn=self.conn, curs=self.curs,
                                       sqltable=sqltable, sqlitepath=self.strSQLitePath)
             self.Parent.AddPage(newPage, strTabName, True)
+            self.Parent.Refresh()
             return True
         else:
             return False
@@ -7362,7 +7376,7 @@ class NewPreviewPage(wx.Panel):
         self.ConnectSQLite()
         self.InitListCtrlColumns()
         self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
-        wx.FutureCall(0, self.InitListCtrlColumnsValues)
+        wx.FutureCall(1, self.InitListCtrlColumnsValues)
         
 
     def OnContextMenu(self, event):
