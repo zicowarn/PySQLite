@@ -1,5 +1,5 @@
 
-PySQL an SQLite Manager Software
+PySQLite an SQLite Manager Software
 =======================================================
 
 Instruction
