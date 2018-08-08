@@ -7518,12 +7518,12 @@ class SQLViewTablePage(wx.Panel):
         if self.MyGrid.GetNumberCols() > 0:
             self.MyGrid.DeleteCols(0, self.MyGrid.GetNumberCols())
         if event:
-            strSelectedTable = event.GetString()
+            strSelectedTable = event.GetEventObject().GetString(event.GetSelection())
             self.sqltable = strSelectedTable.replace(" ", "")
             self.InitListCtrlColumns()
             self.InitListCtrlColumnsValues()
         else:
-            strSelectedTable = self.BitMapComboTablesList.GetStringSelection()
+            strSelectedTable = self.BitMapComboTablesList.GetString(self.BitMapComboTablesList.GetSelection())
             self.sqltable = strSelectedTable.replace(" ", "")
             self.InitListCtrlColumns()
             self.InitListCtrlColumnsValues()
@@ -7797,7 +7797,7 @@ class NewPreviewPage(wx.Panel):
         self.ConnectSQLite()
         self.InitListCtrlColumns()
         self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
-        wx.FutureCall(0, self.InitListCtrlColumnsValues)
+        wx.FutureCall(1, self.InitListCtrlColumnsValues)
         
 
     def OnContextMenu(self, event):
