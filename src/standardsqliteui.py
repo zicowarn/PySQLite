@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-07-31'
+__updated__ = '2018-08-10'
 
 
 
@@ -33,6 +33,11 @@ import wx.lib.mixins.listctrl as listmix
 import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
 from wx.lib.embeddedimage import PyEmbeddedImage
+try:
+    import agw.flatnotebook as FNB
+except ImportError:  # if it's not there locally, try the wxPython lib.
+    import wx.lib.agw.flatnotebook as FNB  # @UnusedImport
+
 import sqlite3
 import os, sys
 
@@ -5820,6 +5825,145 @@ iconTable = PyEmbeddedImage(
     "ZQAyMDA4LTEwLTIzVDExOjU5OjUwKzA4OjAwvN94aQAAAABJRU5ErkJggg==")
 
 
+iconPlay = PyEmbeddedImage(
+    "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")
+
+
+iconOpen = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCyoGQsg9cAAAAVRJREFUSMftlb9LAmEY"
+    "xz/36pYNtdgihENEEMhBgzk2FoZr+A80+CfY0NjgfyBE/4CLEEqtDZJDLRFxXhHeeefd9YMr"
+    "kfSupSACUcR387s87wMP38/D+37hhbnGSPnXrwELQOSn/1vvgJepSclkklqtFo5SLpdrTOMb"
+    "/T20Wq0tVVVHDmYymY1KpZICxITeN8BQAYjH48e6rhfDMBx9l4qCoigTb14oFKxyubyiAJvn"
+    "1erth0jN9HHf+4uclvYa0VgstvvU25GSoP1sVhW+79/LiqhhGL4AdIkAVwCmLIDZ6bQF8Lq6"
+    "1JICsG37UVzU6/1hTw7Acd0HcZDPY1mWFIDneZpwHAfDNL9kAAaDwaMIggCj3X6TFSQBYJhm"
+    "VxLAFQCWZT3P2nl9+QrgUwDY3a428wQ5DtvpdBAF0DStFPHODhOJxEzMwzCkeHRyed1szr/0"
+    "8foGWxuW7FKc7/IAAAAASUVORK5CYII=")
+
+
+
+iconSave = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCyYYFHJPHwAAAshJREFUSMe1lT+IFEkU"
+    "xn+v+s/0ursMM46CuMIa3WmmaLLxJZcICmJiZmJsJCaKLAp3wW16IpdodmcoCHIXnXi5oIiB"
+    "iouCrjK6O7PT3dX1DGq6Z7ZXRfuwoLqqm+rvq+9771XBd25STvZfV17dWDmg+dDkrjlYLErr"
+    "/tXHENk+fU+w7xeleHjv6aWzhxfnYsNS5+U091c2pb17gT8fFFz+9c7a+q0TRwM6zwzAm9sr"
+    "P144c2gxzZXMOpyCU/3GDqqQ5o5zZ5Z6e36+9ggIQwDsMBjkiioEBhYWFhpZNCwCBlmGzRR1"
+    "zgASlt693nCoQl5I44A653GKgXcBwBMIrA08gWIaExTqcdywRgAwGluUWm2ek+pxnFVKlMqi"
+    "zRwUGOXN8R2waUFzT7ZVgVVQSIv/o0BJc0XrChDIrP9gC1hdXW2E3+rsJSuAgrpFwsj6GIys"
+    "ItKkzHwdbOaK5Lrdoqzw44u+4/itNmV2Vb08DqaYCzdJT4+3QWBAXE1BvZmpTDUyAZUagZZz"
+    "U4WgUkOdYPrnciy+8tAzY4Ul4ScJgtquVZVRarcoqMh1UlgASStERCbA5lMKaj4XmeV05z92"
+    "zkEyM8Pc7By9Xo9ut0PcahFHESIGI3Dsjz5xK6oItinQKZkIGBGcETo7HH/dvIaI0G63WV5e"
+    "pteNSZIWURRhxsEKDASB+KNGFTWTzdYUCDJWaMYr0jT1NiTJFy8aYcujbpFW4FLz3JMLIp+v"
+    "jG11M7U2jIkxTrenY7kg9AEMw/CLBEbGxYaiw3XE+RQMZ5lF7115/GTXwbUflo70KvTUkm6M"
+    "OHXiJK0kYX5+nuGHAYMowY5y4ihGjGBEkOEAisxvamOd53/ftev/XlyBwApAhw4F7xe7P/3+"
+    "CJwpq2bG5GNl3iJjDMaY8ftEwduBq+SLc/L+n/O/QXAV6FfLunTLmDS/0ibNAvqOd3wE3RZL"
+    "N8IimxcAAAAASUVORK5CYII=")
+
+
+
+iconStep = PyEmbeddedImage(
+    "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")
+
+
+
+iconAddTab = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
+    "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCys0kwRdsQAAAnpJREFUSMe1lk1IVFEU"
+    "x3/33TvzcnScxFEhE6agRShJULuWEYS0iKBAgqBVtYhaBdLGKSQwiVa1iNxUmxhIsmjhonVE"
+    "BBURmCGIouFn6fTmvXdPixnHr0knP87u3HvO+Z9z/veee5WIsJNilitdDzNPgfatBOy4dEb9"
+    "E2CXGzl17UIbQRhsKrjWes2aww6LKbW4nbyYlYGRcgAEUDtdgZTpZ8r23j4OBCt2XafXP9K8"
+    "GO4u6scbL3L2wH1EBKXUiopMqdw3atHAaDfnW0A7EFp48vkxp1N3iUaja0A21yKBT5PgCyzm"
+    "4ud8qNzoFBXMN2oRQFgIvmjp+bnNk5z5fp2Bsd41ABZQBdsbH5uK3u2vePCsjStlH9OBsV4O"
+    "NsDhuvzVn/ZgcC4f3AKH9kCtCwk3X1XfNy4DV4HAlMq8VKmhwPuJJX2xNYGF2SyMZ/N6IlI0"
+    "qQRmTbn0rmYlsHmSg1Ubs345HKySKgPWLgGFAjm7YsSsajGz/zUq7hydJAgCstl8H25/TRFP"
+    "LAWemIGb+76QrK+jPlmfAELAK7sCAGMM8XgcAKXyZIfL9mOxGNXxOCIyt+KiKVCd6bRqbm5W"
+    "fqCqtzp7MpmM7uwUgTRKKWt6Mm8abGNrzdCcSon4+o/nS03N7nWn8clUB88Hu4r6sZpzJJO1"
+    "BKGVobnIiYqmvhllW2f6+z8Mq55HL1vEYa/44ZGcDW4BU4AL6MKLV/LV83IeEoYCiNLaN8aE"
+    "2tFB1DH3iDqjStRoqrrunRkxkyP7f0Wnpyr1eFWOt4FWsUBIRkJiWFXhY91SAK4xWK3FVTrn"
+    "R2TSsSw42i4saO+n68t8pWfnqfZ+q53+tvwFkT4gA0fhj1oAAAAASUVORK5CYII=")
+
+
+iconTabClose = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/gD+AP7rGNSCAAAA"
+    "CXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQAAAAEABcxq3DAAAC4ElEQVQ4y6WTu4tc"
+    "ZQDFf9/j3jsze3c3Y3Z2Nsn62BCibFQIq6KN2IhaiIEV/AdCrGxSbBOwEEFBUQttRQNiY2Wn"
+    "YVOoIK5FtHDBxQds3Mls3Jk7c2fmzn18D4tRTGHnac4pDr/mcOB/SvwTrgMKaiWsGXigmvmy"
+    "ETRKcFNPr4DfCsQNA3sCzBZ+Bvh2RjrvldgKWotPRqvtVrDUDFQUgrNU2ZQsGZIcpa47yLq9"
+    "vPogM+6tQIpKfAMUEMWR/uTUc09sLl14Hh0q7GEHc9jF9BNMOsakE5x1DEYF3//S/aMzmDwT"
+    "KLGrK8DCarTSfKS1eQE5Sehtf40rDWE2op/kaKmRozGi0eDY8SZLg+nK7aw4p4TYlX8D7g/a"
+    "x9tiOubo+jbd5lkar7xGunYe8/Qmd12+glw7Ax5kLSKOG1opdTpejNFGSpxzZ8LmQs3cOsAU"
+    "lntffImFjceord6NUgKlJdpZeu+/h1CKINR4Idr3nb0HudCax0pxSipFedBBp0N6n35E2e0Q"
+    "ztVRSuD6PdIvv8BlU4QOQEo8vr7++MPI5eUYK0TdFTnVn32SJKdonURJoMzBlHhbYR2IMEQE"
+    "AdZ5nPeidBb5+82E3Ply2k8pkyEKyYmH1lEabP8Ik/RRcUz75UvMPbqB0IppXmKNnXy3vYM+"
+    "GOY47/cHvZTmXISuDOnVjwmlIL12DSskK5cu4m7fImxo8oEnGU6oKtvZ39tHl7MVbnQH2XDl"
+    "hFtsnGxDOWFw9UN8USAbdSaff4Z0JX40onvzkG5/OLXG/JRPHOpZIbD4XuHFg+PKnguiiGh+"
+    "DlUL0Qsxsh6R93okB4f8urfPDz/v00/GO9bad/FkAuAdpcH700KpV8Na+EIc1481GjVUoDHe"
+    "kxUV48mUcZYPy7zccc69LoX4qnT23zO9icDh6yA3kPIpr+Q6Qsw77613/sg5t+u92/H4H0Pk"
+    "aILjjTvfeKe2ZiYlhIAzUAK8/R/dvwAiz28+4sbLNwAAAC56VFh0Y3JlYXRlLWRhdGUAAHja"
+    "MzIwsNA1sNA1MgkxMLAyMrMyNNc1MLUyMAAAQgkFF2r5U+wAAAAuelRYdG1vZGlmeS1kYXRl"
+    "AAB42jMyMLDQNbDQNTIIMTS1MrG0MrHQNTC1MjAAAEJrBSKggLlyAAAAAElFTkSuQmCC")
+
+
+
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
@@ -5896,7 +6040,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
             else:
                 event.Skip()
                 
-    def OnMenuCheckAllSelected(self, event):
+    def OnMenuCheckAllSelected(self, event):  # @UnusedVariable
         """
         20011
         """
@@ -5911,7 +6055,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
                 self.OnCheckItemFromMenuEvent(index, True)
             index = self.GetNextSelected(index)
     
-    def OnMenuUnCheckAllSelected(self, event):
+    def OnMenuUnCheckAllSelected(self, event):  # @UnusedVariable
         """
         20021
         """
@@ -5925,7 +6069,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
                 self.OnCheckItemFromMenuEvent(index, False)
             index = self.GetNextSelected(index)
     
-    def OnMenuCheckSelected(self, event):
+    def OnMenuCheckSelected(self, event):  # @UnusedVariable
         """
         30011
         """
@@ -5933,7 +6077,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
         self.SetItemImage(index, 1)
         self.OnCheckItemFromMenuEvent(index, True)
     
-    def OnMenuUnCheckSelected(self, event):
+    def OnMenuUnCheckSelected(self, event):  # @UnusedVariable
         """
         30021
         """
@@ -6108,7 +6252,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
             else:
                 event.Skip()
                 
-    def OnMenuCheckAllSelected(self, event):
+    def OnMenuCheckAllSelected(self, event):  # @UnusedVariable
         """
         20012
         """
@@ -6122,7 +6266,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                 self.OnCheckItemFromMenuEvent(index, True)
             index = self.GetNextSelected(index)
     
-    def OnMenuUnCheckAllSelected(self, event):
+    def OnMenuUnCheckAllSelected(self, event):  # @UnusedVariable
         """
         20022
         """
@@ -6136,7 +6280,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                 self.OnCheckItemFromMenuEvent(index, False)
             index = self.GetNextSelected(index)
     
-    def OnMenuCheckSelected(self, event):
+    def OnMenuCheckSelected(self, event):  # @UnusedVariable
         """
         30012
         """
@@ -6144,7 +6288,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
         self.SetItemImage(index, 1)
         self.OnCheckItemFromMenuEvent(index, True)
     
-    def OnMenuUnCheckSelected(self, event):
+    def OnMenuUnCheckSelected(self, event):  # @UnusedVariable
         """
         30022
         """
@@ -6356,7 +6500,7 @@ class SQLMigratePage(wx.Panel):
         self.btnMigrateRight2Left.Bind(wx.EVT_BUTTON, self.OnMigrateRight2LeftClicked)
         
     
-    def OnMenuViewInTabSelected(self, event):
+    def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
         30031
         """
@@ -6606,14 +6750,14 @@ class SQLMigratePage(wx.Panel):
     def OnSashChanging(self, event):
         if DEBUG_STDOUT: print "sash changing to %s\n" % str(event.GetSashPosition())
     
-    def OnLeftPartClicked(self, event):
+    def OnLeftPartClicked(self, event):  # @UnusedVariable
         if DEBUG_STDOUT: print "on left part, left mouse up...."
         self.rightPart.SetBackgroundColour(wx.NullColour)
         self.rightPart.Refresh()
         self.leftPart.SetBackgroundColour("#FFFF00")
         self.leftPart.Refresh()
         
-    def OnRightPartClicked(self, event):
+    def OnRightPartClicked(self, event):  # @UnusedVariable
         if DEBUG_STDOUT: print "on right part, left mouse up...."
         self.leftPart.SetBackgroundColour(wx.NullColour)
         self.leftPart.Refresh()
@@ -6794,7 +6938,7 @@ class SQLExportPage(wx.Panel):
         else:
             pass
     
-    def OnMenuViewInTabSelected(self, event):
+    def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         # TODO:
         a = 0  # @UnusedVariable
     
@@ -6945,7 +7089,7 @@ class SQLImportPage(wx.Panel):
             else:
                 event.Skip()
     
-    def OnMenuViewInTabSelected(self, event):
+    def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
         30033
         """
@@ -7179,7 +7323,7 @@ class SQLPreviewPage(wx.Panel):
             else:
                 event.Skip()
                 
-    def OnMenuDropSelected(self, event):
+    def OnMenuDropSelected(self, event):  # @UnusedVariable
         if self.listCtrl.GetSelectedItemCount() == 1:
             # get old sqlite table name
             index = self.listCtrl.GetFirstSelected()
@@ -7210,7 +7354,7 @@ class SQLPreviewPage(wx.Panel):
         else:
             return False
     
-    def OnMenuRenameSelected(self, event):
+    def OnMenuRenameSelected(self, event):  # @UnusedVariable
         if self.listCtrl.GetSelectedItemCount() == 1:
             # get old sqlite table name
             index = self.listCtrl.GetFirstSelected()
@@ -7244,7 +7388,7 @@ class SQLPreviewPage(wx.Panel):
         else:
             return False
     
-    def OnMenuViewSelected(self, event):
+    def OnMenuViewSelected(self, event):  # @UnusedVariable
         """
         30033 #TODO 
         """
@@ -7258,7 +7402,7 @@ class SQLPreviewPage(wx.Panel):
         else:
             return False
     
-    def OnMenuViewInTabSelected(self, event):
+    def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
         30033 #TODO 
         """
@@ -7491,7 +7635,7 @@ class SQLViewTablePage(wx.Panel):
         self.InitListCtrlColumns()
         wx.FutureCall(0, self.InitListCtrlColumnsValues)
     
-    def OnBitMapBtnRefresgClicked(self, event):
+    def OnBitMapBtnRefresgClicked(self, event):  # @UnusedVariable
         # 1. clear the grid / reset the grid
         self.MyGrid.ClearGrid()
         # 2. delete all rows
@@ -7774,7 +7918,75 @@ class SQLViewTablePage(wx.Panel):
         res = self.curs.execute("DELETE FROM %s WHERE  unique_index = %s" % (self.sqltable, indexOfDelete))
         self.conn.commit()
         return res
+    
 
+class SQLExecuteSQLPage(wx.Panel):
+    def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent=parent)
+        
+        self.conn = None
+        self.curs = None
+        self.sqlitepath = ""
+        self.sqltable = ""
+        
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        ##### image buttons
+        headSizerh = wx.BoxSizer(wx.HORIZONTAL)
+        
+        # icon add new tab
+        img = iconAddTab.GetImage()
+        img = img.Scale(24, 24)
+        self.BitMapButtonAddTab = wx.BitmapButton(self, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonAddTab.SetToolTipString(GetTranslationText(1060, u"Tab Open"))
+        headSizerh.Add(self.BitMapButtonAddTab, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        
+        # icon open sql
+        img = iconOpen.GetImage()
+        img = img.Scale(24, 24)
+        self.BitMapButtonOpenSQL = wx.BitmapButton(self, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonOpenSQL.SetToolTipString(GetTranslationText(1061, u"Open SQL file"))
+        headSizerh.Add(self.BitMapButtonOpenSQL, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        
+        # icon save sql
+        img = iconSave.GetImage()
+        img = img.Scale(24, 24)
+        self.BitMapButtonSaveSQL = wx.BitmapButton(self, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonSaveSQL.SetToolTipString(GetTranslationText(1062, u"Save SQL as file"))
+        headSizerh.Add(self.BitMapButtonSaveSQL, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        
+        # icon play 
+        img = iconPlay.GetImage()
+        img = img.Scale(24, 24)
+        self.BitMapButtonPlaySQL = wx.BitmapButton(self, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonPlaySQL.SetToolTipString(GetTranslationText(1063, u"Execute SQL"))
+        headSizerh.Add(self.BitMapButtonPlaySQL, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        
+        # icon step
+        img = iconStep.GetImage()
+        img = img.Scale(24, 24)
+        self.BitMapButtonStepSQL = wx.BitmapButton(self, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonStepSQL.SetToolTipString(GetTranslationText(1064, u"Execute current line"))
+        headSizerh.Add(self.BitMapButtonStepSQL, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        
+        # headSizerh.Add(self.BitMapButtonFilterDelete, proportion=0, flag=wx.EXPAND | wx.ALL, border=1)
+        self.sizer.Add(headSizerh, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        ##### note book
+        self.MySQLNotebook = FNB.FlatNotebook(self, wx.ID_ANY, agwStyle=FNB.FNB_NODRAG)
+        tab = SQLNotebookTab(self.MySQLNotebook)
+        self.MySQLNotebook.AddPage(tab, "SQL 1")
+        tab = SQLNotebookTab(self.MySQLNotebook)
+        self.MySQLNotebook.AddPage(tab, "SQL 2")
+        tab = SQLNotebookTab(self.MySQLNotebook)
+        self.MySQLNotebook.AddPage(tab, "SQL 3")
+        self.sizer.Add(self.MySQLNotebook, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        self.SetSizerAndFit(self.sizer)
+
+
+class SQLNotebookTab(wx.Panel):
+    def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent=parent)
+        self.SetBackgroundColour(wx.BLUE)
 
 
 class NewPreviewPage(wx.Panel):
@@ -8134,7 +8346,7 @@ class AboutInfoDialog(wx.Dialog):
         self.html.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
         self.Show()
     
-    def OnRightUp(self, event):
+    def OnRightUp(self, event):  # @UnusedVariable
         self.Destroy()
 
 
@@ -8162,7 +8374,7 @@ class AboutHelpDialog(wx.Dialog):
         self.html.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
         self.Show()
     
-    def OnRightUp(self, event):
+    def OnRightUp(self, event):  # @UnusedVariable
         self.Destroy()
 
 
@@ -8200,6 +8412,8 @@ class MainFrame(wx.Frame):
                                     GetTranslationText(1030, "Preview a table infos of SQLite"))
         self.menu2.AppendCheckItem(204, GetTranslationText(1055, "&Data View"),
                                    GetTranslationText(1056, "View a table of SQLite"))
+        self.menu2.AppendCheckItem(205, GetTranslationText(1065, "&Execute SQL"),
+                                   GetTranslationText(1066, "Execute SQL command line"))
         self.menu2.AppendCheckItem(201, GetTranslationText(1031, "&Import"),
                                    GetTranslationText(1032, "Import a table into SQLite"))
         self.menu2.AppendCheckItem(202, GetTranslationText(1033, "&Export"),
@@ -8226,6 +8440,8 @@ class MainFrame(wx.Frame):
         self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"))
         self.ViewTablePage = SQLViewTablePage(self.nb)
         self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
+        self.ExecutePage = SQLExecuteSQLPage(self.nb)
+        self.nb.AddPage(self.ExecutePage, GetTranslationText(1065, "Execute SQL"))
         self.ImportPage = SQLImportPage(self.nb)
         self.nb.AddPage(self.ImportPage, GetTranslationText(1031, "Import"))
         self.ExportPage = SQLExportPage(self.nb)
@@ -8271,46 +8487,46 @@ class MainFrame(wx.Frame):
         # but in this case just call Skip so the default is done
         event.Skip() 
 
-    def Menu101(self, event):
+    def Menu101(self, event):  # @UnusedVariable
         self.Close()
 
-    def Menu200(self, event):
+    def Menu200(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Preview Menu Clicked \n'
         self.nb.SetSelection(0)
 
-    def Menu201(self, event):
+    def Menu201(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Import Menu Clicked\n'
         self.nb.SetSelection(1)
 
-    def Menu202(self, event):
+    def Menu202(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Export Menu Clicked'
         self.nb.SetSelection(2)
 
-    def Menu203(self, event):
+    def Menu203(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Migrate Menu Clicked'
         self.nb.SetSelection(3)
             
-    def Menu301(self, event):
+    def Menu301(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Migrate Menu Clicked'
         dlg = AboutInfoDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
     
-    def Menu302(self, event):
+    def Menu302(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Migrate Menu Clicked'
         dlg = AboutHelpDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
             
     def OnTabClose(self, event):
-        if event.GetSelection() > 4:
+        if event.GetSelection() > 5:
             event.Skip()
         else:
             event.Veto()
     
     def OnTabChanged(self, event):
         tabIndex = event.GetSelection()
-        if tabIndex <= 4:
+        if tabIndex <= 5:
             tabText = event.GetEventObject().GetPageText(tabIndex)
             strVorlage = GetTranslationText(1041, "This is %s page") 
             self.SetStatusText(strVorlage % tabText)
@@ -8336,14 +8552,15 @@ class MainFrame(wx.Frame):
     
     def OnMenuEditOpen(self, event):
         if event.GetMenu().GetMenuItems()[0].GetId() == 200:
-            lt = [False] * 5
+            lt = [False] * 6
             index = self.nb.GetSelection()
-            if index > 4:
+            if index > 5:
                 self.menu2.FindItemByPosition(0).Check(lt[0])
                 self.menu2.FindItemByPosition(1).Check(lt[1])
                 self.menu2.FindItemByPosition(2).Check(lt[2])
                 self.menu2.FindItemByPosition(3).Check(lt[3])
                 self.menu2.FindItemByPosition(4).Check(lt[4])
+                self.menu2.FindItemByPosition(5).Check(lt[5])
             else:
                 lt[index] = True
                 self.menu2.FindItemByPosition(0).Check(lt[0])
@@ -8351,6 +8568,7 @@ class MainFrame(wx.Frame):
                 self.menu2.FindItemByPosition(2).Check(lt[2])
                 self.menu2.FindItemByPosition(3).Check(lt[3])
                 self.menu2.FindItemByPosition(4).Check(lt[4])
+                self.menu2.FindItemByPosition(5).Check(lt[5])
         else:
             pass
 
