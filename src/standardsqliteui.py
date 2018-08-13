@@ -20,19 +20,22 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-10'
+__updated__ = '2018-08-13'
 
 
 
 import wx  # @UnusedImport
 import wx.lib.agw.aui as aui
+import  wx.stc  as  stc
 import wx.grid
 import wx.html
 import wx.combo
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
+from wx.lib.splitter import MultiSplitterWindow
 from wx.lib.embeddedimage import PyEmbeddedImage
+
 try:
     import agw.flatnotebook as FNB
 except ImportError:  # if it's not there locally, try the wxPython lib.
@@ -40,6 +43,44 @@ except ImportError:  # if it's not there locally, try the wxPython lib.
 
 import sqlite3
 import os, sys
+
+if wx.Platform == '__WXMSW__':
+    faces = { 'times': 'Times New Roman',
+              'mono' : 'Courier New',
+              'helv' : 'Arial',
+              'other': 'Comic Sans MS',
+              'size' : 10,
+              'size2': 8,
+             }
+    face1 = 'Arial'
+    face2 = 'Times New Roman'
+    face3 = 'Courier New'
+    pb = 12
+elif wx.Platform == '__WXMAC__':
+    faces = { 'times': 'Times New Roman',
+              'mono' : 'Monaco',
+              'helv' : 'Arial',
+              'other': 'Comic Sans MS',
+              'size' : 12,
+              'size2': 10,
+             }
+    face1 = 'Helvetica'
+    face2 = 'Times'
+    face3 = 'Courier'
+    pb = 10
+else:
+    faces = { 'times': 'Times',
+              'mono' : 'Courier',
+              'helv' : 'Helvetica',
+              'other': 'new century schoolbook',
+              'size' : 12,
+              'size2': 10,
+             }
+    face1 = 'Helvetica'
+    face2 = 'Times'
+    face3 = 'Courier'
+    pb = 10
+
 
 DEBUG_STDOUT = True
 DEFAULT_LANGUAGE = "049"
@@ -54,6 +95,22 @@ DEFAULT_COLUMNS_COLORS_INFO = {"NULL" : ((244, 184, 242, 255), (0, 0, 0, 255)),
                                "TEXT" : ((204, 204, 81, 255), (0, 0, 0, 255)),
                                "BLOB" : ((218, 165, 32, 255), (255, 255, 255, 255)),
                                "DEFAULT" :((-1, -1, -1, 255), (0, 0, 0, 255))}
+
+
+DEFAULT_SQLITE_KEY_WORDS_LIST = ['abort', 'action', 'add', 'after', 'all',
+                                 'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by',
+                                 'cascade', 'case', 'cast', 'check', 'collate', 'column', 'commit', 'conflict', 'constraint',
+                                 'create', 'cross', 'current_date', 'current_time', 'current_timestamp', 'database', 'default', 'deferrable', 'deferred',
+                                 'delete', 'desc', 'detach', 'distinct', 'drop', 'each', 'else', 'end', 'escape', 'except',
+                                 'exclusive', 'exists', 'explain', 'fail', 'for', 'foreign', 'from', 'full', 'glob', 'group',
+                                 'having', 'if', 'ignore', 'immediate', 'in', 'index', 'indexed', 'initially', 'inner',
+                                 'insert', 'instead', 'intersect', 'into', 'is', 'isnull', 'join', 'key', 'left', 'like', 'limit',
+                                 'match', 'natural', 'no', 'not', 'notnull', 'null', 'of', 'offset', 'on', 'or', 'order', 'outer', 'plan',
+                                 'pragma', 'primary', 'query', 'raise', 'recursive', 'references', 'regexp', 'reindex',
+                                 'release', 'rename', 'replace', 'restrict', 'right', 'rollback', 'row', 'savepoint', 'select',
+                                 'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger',
+                                 'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual',
+                                 'when', 'where', 'with', 'without' ]
 
 DEFAULT_TRANSLATION_DICT = {
                             "049" : {
@@ -5963,6 +6020,27 @@ iconTabClose = PyEmbeddedImage(
     "AAB42jMyMLDQNbDQNTIIMTS1MrG0MrHQNTC1MjAAAEJrBSKggLlyAAAAAElFTkSuQmCC")
 
 
+iconTableViewSave = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAA3NCSVQICAjb4U/gAAADbUlE"
+    "QVQ4ja1UPW8kRRB9VV093rG9s2ft2jhZW7J1iBAJIkSCkEAE6C4AJAISfgcREX+AlIycBIn0"
+    "EgInJ12CAJ9s33H2fpxX++X96ukqghmv13sZojTSzJRev6n3XvcA/1PRg0++J6LZdAKYATAr"
+    "7jADrGiVUCKAiicQACpa3ieJFyGiGPO93QMwEzP5hJwjduQ9sQMzOVfwWoxQNY0aAjSaRgvB"
+    "VGfTIXQuZkZM0+kE7IiZo5Jz5ByplowiAJmp5Tk0WowaFhajxWhhblFjzB1DUM5OReH2Wn0l"
+    "EMAgsvv9Ql0hXL58v9Z+Pfj6i4+Y6dYNALh48WJ/f39jI1k2ianbfQ2gUa/fecx8evp3u92W"
+    "D463LtP+p+81F4t56SUAs1ZDm81mCGG5RkRGoy0AaZqWSLN0c7OZjp5vjiVXyxVqALmVMJFH"
+    "jWogXmlyHg24QxrMQGqICvHe1+v18/NzulVbVLfbzfPce3/HQzQYDABkWbaK7PV6RCR5ng+H"
+    "w4ODg2LPLCuE0Gw2vffLvnOu0+kAqK945L0fj8e9Xk/MLISgqvP5fDmUmXnvnXOz2WzVo2LA"
+    "+Xy+hImIiAAQIvLee++TJFmuMbPLy0sz297e/umpbKXuq3cCQSuVyurUTHjW23qm71ZxKiKS"
+    "ZdnZ2Rkzr4L6/f7FxUWSJL3p8TSampIp7hcxxnPrjGNGJCGE6+vro6OjPM9XQap6eHhoZld/"
+    "asUjTbeEbY3IMYYzezXSYzNZelZIXc1IRJxzrWGoJFCztTQAEGgws6uBIYE456rVaqvVWot/"
+    "OBxeXV0lSTJd7BgwnU4CrRMJY6GVycKQ4G6KNaJl8yaYkqnC3pBmhkVuk2AAJMY4Go3q9fqa"
+    "R1mW7e3tqWquuFnY5z/DQEwglOc0KmAwlFuhlNZut9e+NhwOW62Wc87xLjOYgPmEmJlJ2IGg"
+    "hMCiVh7qUpqIrMUPgJmTJHEEZjDRtzu/vnzVevj2w8ePHm9UKo75wx/7rFoSFdJ2dnbWpFWr"
+    "1UajoarC5JiY0O10njx5EmPEo/Iv4RlKVIQphaNpmt530QAU2z2/6UotI6CysfHWXqOWVZnA"
+    "5c8QbKajAaoQALVa7eTkZC21Xq/X7/dF5DP555ffKwQ7STflwcd/vEy+++E354SI+n8toDa7"
+    "fJ5/s/tm4v+x/gWWI77j/9sMQwAAAABJRU5ErkJggg==")
+
+
 
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
@@ -7984,9 +8062,170 @@ class SQLExecuteSQLPage(wx.Panel):
 
 
 class SQLNotebookTab(wx.Panel):
+    """
+    """
     def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
-        self.SetBackgroundColour(wx.BLUE)
+        
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.TabPanelSplitterWin = MultiSplitterWindow(self, wx.ID_ANY,
+                               style=wx.SP_LIVE_UPDATE)
+        
+        # sty = wx.BORDER_NONE
+        # sty = wx.BORDER_SIMPLE
+        # wx.BORDER_SUNKEN
+        # part 1, for sql commands
+        self.vSizerWinSQLCommands = wx.BoxSizer(wx.VERTICAL)
+        self.hSizerWinSQLCommands = wx.BoxSizer(wx.HORIZONTAL)
+        self.WinSQLCommands = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
+        self.WinSQLCommands.SetBackgroundColour("pink")
+        self.STCSQLCommands = stc.StyledTextCtrl(self.WinSQLCommands, wx.ID_ANY)
+        self.STCSQLCommands.EmptyUndoBuffer()
+        # set keywords list
+        self.STCSQLCommands.SetLexer(stc.STC_LEX_SQL) 
+        self.STCSQLCommands.SetKeyWords(0, " ".join(DEFAULT_SQLITE_KEY_WORDS_LIST))
+        # line numbers in the margin
+        self.STCSQLCommands.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+        self.STCSQLCommands.SetMarginWidth(0, 22)
+        # set styles
+        self.STCSQLCommands.StyleClearAll()  # Reset all to be like the default
+        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 2, face1))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb))
+        # bind events
+        self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
+        self.STCSQLCommands.Bind(stc.EVT_STC_DRAG_OVER, self.OnSTCDragOver)
+        self.STCSQLCommands.Bind(stc.EVT_STC_START_DRAG, self.OnSTCStartDrag)
+        self.STCSQLCommands.Bind(stc.EVT_STC_MODIFIED, self.OnSTCModified)
+        self.STCSQLCommands.Bind(wx.EVT_WINDOW_DESTROY, self.OnSTCDestroy)
+        self.hSizerWinSQLCommands.Add(self.STCSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.vSizerWinSQLCommands.Add(self.hSizerWinSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.WinSQLCommands.SetSizerAndFit(self.vSizerWinSQLCommands)
+        self.TabPanelSplitterWin.AppendWindow(self.WinSQLCommands, 125)
+        
+        # part 2, for sql results
+        self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
+        self.WinSQLResults.SetBackgroundColour("sky blue")
+        wx.StaticText(self.WinSQLResults, -1, "Panel Two", (5, 5))
+        self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
+        
+        # part 3, for sql executed info
+        self.hSizerSQLExecutedInfo = wx.BoxSizer(wx.HORIZONTAL)
+        self.WinSQLExecutedInfo = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
+        # self.WinSQLExecutedInfo.SetBackgroundColour("green")
+        self.TCSQLExecutedInfo = wx.TextCtrl(self.WinSQLExecutedInfo, -1, "Panel Three", (5, 5))
+        # self.TCSQLExecutedInfo.SetBackgroundColour("red")
+        self.hSizerSQLExecutedInfo.Add(self.TCSQLExecutedInfo, proportion=1, flag=wx.EXPAND | wx.ALL, border=0)
+        img = iconTableViewSave.GetImage()
+        img = img.Scale(24, 24)
+        self.vSizerImageButton = wx.BoxSizer(wx.VERTICAL)
+        self.BitMapButtonStepSQL = wx.BitmapButton(self.WinSQLExecutedInfo, wx.ID_ANY, img.ConvertToBitmap(), size=wx.DefaultSize)
+        self.BitMapButtonStepSQL.SetToolTipString(GetTranslationText(1065, u"Save table view "))
+        self.vSizerImageButton.Add(self.BitMapButtonStepSQL, proportion=1, flag=wx.ALL | wx.ALIGN_CENTER, border=1)
+        self.hSizerSQLExecutedInfo.Add(self.vSizerImageButton, proportion=0, flag=wx.ALL | wx.ALIGN_CENTRE_VERTICAL, border=0)
+        self.WinSQLExecutedInfo.SetSizerAndFit(self.hSizerSQLExecutedInfo)
+        self.WinSQLExecutedInfo.SetMinSize((-1, 30))
+        self.TabPanelSplitterWin.AppendWindow(self.WinSQLExecutedInfo)
+        self.TabPanelSplitterWin.SetMinimumPaneSize(40)  # does not work for the last panel 
+        self.TabPanelSplitterWin.SetOrientation(wx.VERTICAL)
+        self.sizer.Add(self.TabPanelSplitterWin, proportion=1, flag=wx.EXPAND | wx.ALL, border=2)
+        self.SetSizerAndFit(self.sizer)
+        
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnMSPChanged)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
+
+
+    def OnMSPChanging(self, evt):
+        print "Changing sash:%d  %s\n" % (evt.GetSashIdx(), evt.GetSashPosition())
+        iSashPosition = evt.GetSashPosition()
+        sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
+        if evt.GetSashIdx() == 1:
+            iFirstSashPostion = self.TabPanelSplitterWin.GetSashPosition(0)
+            if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 40:
+                evt.Veto()
+            else:
+                evt.Skip()
+        
+
+    def OnMSPChanged(self, evt):
+        print "Changed sash:%d  %s" % (evt.GetSashIdx(), evt.GetSashPosition())
+    
+    def OnSTCDestroy(self, evt):
+        # This is how the clipboard contents can be preserved after
+        # the app has exited.
+        wx.TheClipboard.Flush()
+        evt.Skip()
+
+
+    def OnSTCStartDrag(self, evt):
+        print "OnStartDrag: %d, %s" \
+                       % (evt.GetDragAllowMove(), evt.GetDragText())
+
+        if evt.GetPosition() < 250:
+            evt.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
+            evt.SetDragText("DRAGGED TEXT")  # you can change what is dragged
+            # evt.SetDragText("")             # or prevent the drag with empty text
+
+
+    def OnSTCDragOver(self, evt):
+        print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
+            % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
+
+        if evt.GetPosition() < 250:
+            evt.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
+
+
+    def OnSTCDoDrop(self, evt):
+        print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
+                       "\ttext: %s" \
+                       % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
+                          evt.GetDragText())
+
+        if evt.GetPosition() < 500:
+            evt.SetDragText("DROPPED TEXT")  # Can change text if needed
+            # evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
+            # is probably better to do it in OnDragOver so
+            # there is visual feedback
+            
+            # evt.SetPosition(25)             # Can also change position, but I'm not sure why
+            # you would want to...
+    
+    def OnSTCModified(self, evt):
+        print """OnModified \
+        Mod type:     %s \
+        At position:  %d \
+        Lines added:  %d \
+        Text Length:  %d \
+        Text:         %s""" % (self.TransModTypeOfSTC(evt.GetModificationType()),
+                                  evt.GetPosition(),
+                                  evt.GetLinesAdded(),
+                                  evt.GetLength(),
+                                  repr(evt.GetText()))
+
+    def TransModTypeOfSTC(self, modType):
+        st = ""
+        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
+                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
+                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                 (stc.STC_PERFORMED_USER, "UserFlag"),
+                 (stc.STC_PERFORMED_UNDO, "Undo"),
+                 (stc.STC_PERFORMED_REDO, "Redo"),
+                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+                 ]
+
+        for flag, text in table:
+            if flag & modType:
+                st = st + text + " "
+
+        if not st:
+            st = 'UNKNOWN'
+
+        return st
+
 
 
 class NewPreviewPage(wx.Panel):
