@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-13'
+__updated__ = '2018-08-14'
 
 
 
@@ -8098,6 +8098,8 @@ class SQLNotebookTab(wx.Panel):
         self.STCSQLCommands.Bind(stc.EVT_STC_START_DRAG, self.OnSTCStartDrag)
         self.STCSQLCommands.Bind(stc.EVT_STC_MODIFIED, self.OnSTCModified)
         self.STCSQLCommands.Bind(wx.EVT_WINDOW_DESTROY, self.OnSTCDestroy)
+        self.STCSQLCommands.Bind(wx.EVT_KEY_DOWN, self.OnSTCKeyDown)
+        self.STCSQLCommands.Bind(wx.EVT_CHAR, self.OnSTCChar)
         self.hSizerWinSQLCommands.Add(self.STCSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
         self.vSizerWinSQLCommands.Add(self.hSizerWinSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
         self.WinSQLCommands.SetSizerAndFit(self.vSizerWinSQLCommands)
@@ -8135,72 +8137,148 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
 
-    def OnMSPChanging(self, evt):
-        print "Changing sash:%d  %s\n" % (evt.GetSashIdx(), evt.GetSashPosition())
-        iSashPosition = evt.GetSashPosition()
+    def OnMSPChanging(self, event):
+        print "Changing sash:%d  %s\n" % (event.GetSashIdx(), event.GetSashPosition())
+        iSashPosition = event.GetSashPosition()
         sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
-        if evt.GetSashIdx() == 1:
+        if event.GetSashIdx() == 1:
             iFirstSashPostion = self.TabPanelSplitterWin.GetSashPosition(0)
             if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 40:
-                evt.Veto()
+                event.Veto()
             else:
-                evt.Skip()
+                event.Skip()
         
 
-    def OnMSPChanged(self, evt):
-        print "Changed sash:%d  %s" % (evt.GetSashIdx(), evt.GetSashPosition())
+    def OnMSPChanged(self, event):
+        print "Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition())
     
-    def OnSTCDestroy(self, evt):
+    def OnSTCDestroy(self, event):
         # This is how the clipboard contents can be preserved after
         # the app has exited.
         wx.TheClipboard.Flush()
-        evt.Skip()
+        event.Skip()
 
 
-    def OnSTCStartDrag(self, evt):
+    def OnSTCStartDrag(self, event):
         print "OnStartDrag: %d, %s" \
-                       % (evt.GetDragAllowMove(), evt.GetDragText())
+                       % (event.GetDragAllowMove(), event.GetDragText())
 
-        if evt.GetPosition() < 250:
-            evt.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
-            evt.SetDragText("DRAGGED TEXT")  # you can change what is dragged
-            # evt.SetDragText("")             # or prevent the drag with empty text
+        if event.GetPosition() < 250:
+            event.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
+            event.SetDragText("DRAGGED TEXT")  # you can change what is dragged
+            # event.SetDragText("")             # or prevent the drag with empty text
 
 
-    def OnSTCDragOver(self, evt):
+    def OnSTCDragOver(self, event):
         print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
-            % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
+            % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult())
 
-        if evt.GetPosition() < 250:
-            evt.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
+        if event.GetPosition() < 250:
+            event.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
 
 
-    def OnSTCDoDrop(self, evt):
+    def OnSTCDoDrop(self, event):
         print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
                        "\ttext: %s" \
-                       % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
-                          evt.GetDragText())
+                       % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult(),
+                          event.GetDragText())
 
-        if evt.GetPosition() < 500:
-            evt.SetDragText("DROPPED TEXT")  # Can change text if needed
-            # evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
+        if event.GetPosition() < 500:
+            event.SetDragText("DROPPED TEXT")  # Can change text if needed
+            # event.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
             # is probably better to do it in OnDragOver so
             # there is visual feedback
             
-            # evt.SetPosition(25)             # Can also change position, but I'm not sure why
+            # event.SetPosition(25)             # Can also change position, but I'm not sure why
             # you would want to...
+    def OnSTCKeyDown(self, event):
+        key = event.GetKeyCode()
+        control = event.ControlDown()
+        # shift=event.ShiftDown()
+        alt = event.AltDown()
+  
+        if key == wx.WXK_SPACE and control and not self.AutoCompActive():
+            self.AutoComplete()
+        elif key == ord('X') and control and not alt:
+            self.OnSTCCut()
+        elif key == ord('C') and control and not alt:
+            self.OnSTCCopy()
+        elif key == ord('V') and control and not alt:
+            self.OnSTCPaste()
+        else:
+            event.Skip()
     
-    def OnSTCModified(self, evt):
+    def OnSTCChar(self, event):
+        key = event.GetKeyCode()
+        control = event.ControlDown()
+        alt = event.AltDown()
+        # GF We avoid an error while evaluating chr(key), next line.
+        if key > 255 or key < 0:
+            event.Skip()
+        # GF No keyboard needs control or alt to make '(', ')' or '.'
+        # GF Shift is not included as it is needed in some keyboards.
+        elif chr(key) in ['(', ')', '.'] and not control and not alt:
+            if key == ord('('):
+                self.STCSQLCommands.AddText('(')
+            elif key == ord(')'):
+                # ) end tips
+                self.STCSQLCommands.AddText(')')
+            elif key == ord('.'):
+                # . Code completion
+                self.AutoComplete(obj=1)
+            else:
+                event.Skip()
+        else:
+            event.Skip()
+    
+    
+    def OnSTCModified(self, event):
         print """OnModified \
         Mod type:     %s \
         At position:  %d \
         Lines added:  %d \
         Text Length:  %d \
-        Text:         %s""" % (self.TransModTypeOfSTC(evt.GetModificationType()),
-                                  evt.GetPosition(),
-                                  evt.GetLinesAdded(),
-                                  evt.GetLength(),
-                                  repr(evt.GetText()))
+        Text:         %s""" % (self.TransModTypeOfSTC(event.GetModificationType()),
+                                  event.GetPosition(),
+                                  event.GetLinesAdded(),
+                                  event.GetLength(),
+                                  repr(event.GetText()))
+        
+    
+    def OnSTCCut(self):
+        "Override default Cut to track lines using an internal clipboard"
+        start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
+        end = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionEnd())
+        # store the uuids and line text to check on pasting:
+        original_text_lines = [self.GetLineText(i + 1) for i in range(start, end)]
+        self.STCSQLCommands.clipboard = original_text_lines, self.STCSQLCommands.metadata[start:end]
+        # call the default method:
+        return stc.StyledTextCtrl.Cut(self.STCSQLCommands)
+
+    def OnSTCCopy(self):
+        "Override default Copy to track lines using an internal clipboard"
+        # just clean internal clipboard as lines will be new when pasted
+        self.STCSQLCommands.clipboard = None
+        return stc.StyledTextCtrl.Copy(self.STCSQLCommands)
+        
+    def OnSTCPaste(self):
+        "Override default Paste to track lines using an internal clipboard"
+        start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
+        ret = stc.StyledTextCtrl.Paste(self)
+        # only restore uuids if text is the same (not copied from other app):
+        if self.clipboard:
+            original_text_lines, metadata_saved = self.STCSQLCommands.clipboard
+            end = start + len(metadata_saved)
+            new_text_lines = [self.STCSQLCommands.GetLineText(i + 1) for i in range(start, end)]
+            if metadata_saved and original_text_lines == new_text_lines:
+                # #print "restoring", start, metadata_saved
+                self.metadata[start:end] = metadata_saved
+                self.clipboard = None
+        return ret
+        
+    def OnSTCUndo(self):
+        print "UNDO!"
+        
 
     def TransModTypeOfSTC(self, modType):
         st = ""
@@ -8225,6 +8303,60 @@ class SQLNotebookTab(wx.Panel):
             st = 'UNKNOWN'
 
         return st
+    
+    def DoBuiltIn(self, event):
+        evtid = event.GetId()
+        if evtid == wx.ID_COPY:
+            self.Copy()
+        elif evtid == wx.ID_PASTE:
+            self.Paste()
+        elif evtid == wx.ID_CUT:
+            self.Cut()
+        elif evtid == wx.ID_DELETE:
+            self.CmdKeyExecute(stc.STC_CMD_CLEAR)
+        elif evtid == wx.ID_UNDO:
+            self.CmdKeyExecute(stc.STC_CMD_UNDO)
+        elif evtid == wx.ID_REDO:
+            self.CmdKeyExecute(stc.STC_CMD_REDO)
+    
+    def AutoComplete(self, obj=0):
+        if obj:
+            self.STCSQLCommands.AddText('.')
+            word = ''
+        else:
+            word = self.GetWord()
+        words = ["hallo", "ddddede"]
+        if words:
+            self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
+    
+    
+    def GetWord(self, whole=None, pos=None):
+        """
+        """
+        # TODO:
+        for delta in (0, -1, 1):
+            word = self._GetWord(whole=whole, delta=delta, pos=pos)
+            if word: return word
+        return ''
+
+    def _GetWord(self, whole=None, delta=0, pos=None):
+        """
+        """
+        # TODO:
+        if pos is None:
+            pos = self.STCSQLCommands.GetCurrentPos() + delta
+            line = self.STCSQLCommands.GetCurrentLine()
+        else:
+            line = self.STCSQLCommands.LineFromPosition(pos)
+        linepos = self.STCSQLCommands.PositionFromLine(line)
+        txt = self.STCSQLCommands.GetLine(line)
+        start = self.STCSQLCommands.WordStartPosition(pos, 1)
+        if whole:
+            end = self.STCSQLCommands.WordEndPosition(pos, 1)
+        else:
+            end = pos
+        return txt[start - linepos:end - linepos]
+
 
 
 
