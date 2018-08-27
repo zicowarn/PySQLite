@@ -6470,7 +6470,6 @@ class SQLiteTableUIGridStandard(wx.grid.Grid):
         
         self.Bind(wx.EVT_KEY_DOWN, self.OnTasteKeyDown)
         self.Bind(wx.EVT_KEY_UP, self.OnTasteKeyUp)
-        
     
     def OnTasteKeyDown(self, event):
         if event.KeyCode == wx.WXK_CONTROL:
@@ -6547,8 +6546,6 @@ class SQLMigratePage(wx.Panel):
         self.splitter.SetMinimumPaneSize(20)
         self.splitter.SplitVertically(self.leftPart, self.rightPart, 0)
         # self.splitter.Layout()
-        
-        
         self.btnMigrateLeft2Right = wx.Button(self, label=GetTranslationText(1006, "Migrate left to right"))
         self.btnMigrateRight2Left = wx.Button(self, label=GetTranslationText(1007, "Migrate right to left"))
         
@@ -6577,7 +6574,6 @@ class SQLMigratePage(wx.Panel):
         self.btnMigrateLeft2Right.Bind(wx.EVT_BUTTON, self.OnMigrateLeft2RightClicked)
         self.btnMigrateRight2Left.Bind(wx.EVT_BUTTON, self.OnMigrateRight2LeftClicked)
         
-    
     def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
         30031
@@ -6940,8 +6936,6 @@ class SQLExportPage(wx.Panel):
         
         self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesExpert, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        
-        
         self.strSQLitePath = ""
         self.conn = None
         self.curs = None
@@ -7089,7 +7083,6 @@ class SQLImportPage(wx.Panel):
             fileMask="sqlite (*.SQLite)|*.sqlite",
             changeCallback=self.OnOpenDatabaseCallBacked)
         
-        
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
         self.listCtrl.InsertColumn(0, GetTranslationText(1015, "Name"))
@@ -7112,19 +7105,13 @@ class SQLImportPage(wx.Panel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
 
-        
         # sizerH = wx.BoxSizer(wx.HORIZONTAL)
         # sizerH.Add(self.cbWithCreateCommand, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         # sizerH.Add(self.cbWithBeginTransaction, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
-        
-        
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         
         # self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesImport, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        
-        
-        
         self.listCtrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK , self.OnContextMenu)
         self.btnSelectedTablesImport.Bind(wx.EVT_BUTTON, self.OnButtonImportTablesClicked)
         
@@ -7523,6 +7510,8 @@ class SQLPreviewPage(wx.Panel):
                     for strTable in listOfTables:
                         self.listCtrl.Append([strTable, self.GetTableTypeByTableName(strTable=strTable)])
                     self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                    # add the first sql tab
+                    self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
             except:
                 return False
@@ -7820,7 +7809,6 @@ class SQLViewTablePage(wx.Panel):
         dlg.Destroy()
         event.Skip()
         
-              
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -8008,6 +7996,7 @@ class SQLExecuteSQLPage(wx.Panel):
         self.sqltable = ""
         
         self.iUidSqlPage = 0
+        self.bDatabaseIsReady = False
         
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         ##### image buttons
@@ -8053,12 +8042,11 @@ class SQLExecuteSQLPage(wx.Panel):
         
         ##### note book
         self.MySQLNotebook = FNB.FlatNotebook(self, wx.ID_ANY, agwStyle=FNB.FNB_NODRAG)
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 1")
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 2")
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 3")
+        #tab = SQLNotebookTab(self.MySQLNotebook)
+        #self.MySQLNotebook.AddPage(tab, "SQL 1")
+        #tab = SQLNotebookTab(self.MySQLNotebook)
+        #self.MySQLNotebook.AddPage(tab, "SQL 2")
+        
         self.sizer.Add(self.MySQLNotebook, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizerAndFit(self.sizer)
         
@@ -8067,15 +8055,27 @@ class SQLExecuteSQLPage(wx.Panel):
         self.BitMapButtonSaveSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnSaveSQLClicked)
         self.BitMapButtonPlaySQL.Bind(wx.EVT_BUTTON, self.OnImgBtnPlaySQLClicked)
         self.BitMapButtonStepSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnStepSQLClicked)
+    
+    def AddTheFirstSQLTabPage(self):
+        self.bDatabaseIsReady = False
+        if self.MySQLNotebook.GetPageCount() == 0:
+            tab = SQLNotebookTab(self.MySQLNotebook)
+            self.MySQLNotebook.AddPage(tab, "SQL 1")
+            self.bDatabaseIsReady = True
+        else:
+            self.bDatabaseIsReady = True
         
     def OnImgBtnTabOpenClicked(self, event):  # @UnusedVariable
-        if self.iUidSqlPage == 0:
-            self.iUidSqlPage = self.MySQLNotebook.GetPageCount() + 1
+        if self.bDatabaseIsReady:
+            if self.iUidSqlPage == 0:
+                self.iUidSqlPage = self.MySQLNotebook.GetPageCount() + 1
+            else:
+                self.iUidSqlPage += 1
+            strNewTabName = "SQL %s" % self.iUidSqlPage
+            tab = SQLNotebookTab(self.MySQLNotebook)
+            self.MySQLNotebook.AddPage(tab, strNewTabName)
         else:
-            self.iUidSqlPage += 1
-        strNewTabName = "SQL %s" % self.iUidSqlPage
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, strNewTabName)
+            pass
         
     def OnImgBtnOpenSQLClicked(self, event):  # @UnusedVariable
         dlg = wx.FileDialog(
@@ -8130,7 +8130,7 @@ class SQLNotebookTab(wx.Panel):
         self.vSizerWinSQLCommands = wx.BoxSizer(wx.VERTICAL)
         self.hSizerWinSQLCommands = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLCommands = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
-        self.WinSQLCommands.SetBackgroundColour("pink")
+        self.WinSQLCommands.SetBackgroundColour("red")
         self.STCSQLCommands = stc.StyledTextCtrl(self.WinSQLCommands, wx.ID_ANY)
         self.STCSQLCommands.EmptyUndoBuffer()
         # set keywords list
@@ -8159,7 +8159,7 @@ class SQLNotebookTab(wx.Panel):
         
         # part 2, for sql results
         self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
-        self.WinSQLResults.SetBackgroundColour("sky blue")
+        #self.WinSQLResults.SetBackgroundColour("sky blue")
         wx.StaticText(self.WinSQLResults, -1, "Panel Two", (5, 5))
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
         
@@ -8188,7 +8188,6 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnMSPChanged)
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
-
     def OnMSPChanging(self, event):
         print "Changing sash:%d  %s\n" % (event.GetSashIdx(), event.GetSashPosition())
         iSashPosition = event.GetSashPosition()
@@ -8200,7 +8199,6 @@ class SQLNotebookTab(wx.Panel):
             else:
                 event.Skip()
         
-
     def OnMSPChanged(self, event):
         print "Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition())
     
@@ -8209,7 +8207,6 @@ class SQLNotebookTab(wx.Panel):
         # the app has exited.
         wx.TheClipboard.Flush()
         event.Skip()
-
 
     def OnSTCStartDrag(self, event):
         print "OnStartDrag: %d, %s" \
@@ -8220,14 +8217,12 @@ class SQLNotebookTab(wx.Panel):
             event.SetDragText("DRAGGED TEXT")  # you can change what is dragged
             # event.SetDragText("")             # or prevent the drag with empty text
 
-
     def OnSTCDragOver(self, event):
         print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
             % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult())
 
         if event.GetPosition() < 250:
             event.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
-
 
     def OnSTCDoDrop(self, event):
         print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
@@ -8243,6 +8238,7 @@ class SQLNotebookTab(wx.Panel):
             
             # event.SetPosition(25)             # Can also change position, but I'm not sure why
             # you would want to...
+            
     def OnSTCKeyDown(self, event):
         key = event.GetKeyCode()
         control = event.ControlDown()
@@ -8283,7 +8279,6 @@ class SQLNotebookTab(wx.Panel):
         else:
             event.Skip()
     
-    
     def OnSTCModified(self, event):
         print """OnModified \
         Mod type:     %s \
@@ -8296,7 +8291,6 @@ class SQLNotebookTab(wx.Panel):
                                   event.GetLength(),
                                   repr(event.GetText()))
         
-    
     def OnSTCCut(self):
         "Override default Cut to track lines using an internal clipboard"
         start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
@@ -8331,7 +8325,6 @@ class SQLNotebookTab(wx.Panel):
     def OnSTCUndo(self):
         print "UNDO!"
         
-
     def TransModTypeOfSTC(self, modType):
         st = ""
         table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
@@ -8353,7 +8346,6 @@ class SQLNotebookTab(wx.Panel):
 
         if not st:
             st = 'UNKNOWN'
-
         return st
     
     def DoBuiltIn(self, event):
@@ -8380,7 +8372,6 @@ class SQLNotebookTab(wx.Panel):
         words = ["hallo", "ddddede"]
         if words:
             self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
-    
     
     def GetWord(self, whole=None, pos=None):
         """
@@ -8410,8 +8401,6 @@ class SQLNotebookTab(wx.Panel):
         return txt[start - linepos:end - linepos]
 
 
-
-
 class NewPreviewPage(wx.Panel):
     def __init__(self, parent, id=wx.ID_ANY, conn=None, curs=None, sqltable="", sqlitepath=""):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent, id=id)
@@ -8434,7 +8423,6 @@ class NewPreviewPage(wx.Panel):
         self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
         wx.FutureCall(1, self.InitListCtrlColumnsValues)
         
-
     def OnContextMenu(self, event):
 
         # only do this part the first time so the events are only bound once
@@ -8505,8 +8493,7 @@ class NewPreviewPage(wx.Panel):
     
         dlg.Destroy()
         event.Skip()
-        
-              
+                     
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -8527,8 +8514,7 @@ class NewPreviewPage(wx.Panel):
         wx.TheClipboard.SetData(clipdata)
         wx.TheClipboard.Close()
         event.Skip()
-        
-        
+               
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -8611,8 +8597,7 @@ class NewPreviewPage(wx.Panel):
             self.MyGrid.SetColAttr(index, attr)
             self.MyGrid.SetColSize(index, 10)
         # self.listCtrl.Arrange()
-    
-    
+        
     def InitListCtrlColumnsValues(self):
         wait = wx.BusyCursor()
         try:
@@ -8675,8 +8660,7 @@ class NewPreviewPage(wx.Panel):
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
-            
-    
+                
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
         # Build the insert statement for each row of the current table
@@ -8723,8 +8707,7 @@ class AboutInfoHtmlWindow(wx.html.HtmlWindow):
         
     def OnLinkClicked(self, link):
         wx.LaunchDefaultBrowser(link.GetHref())
-        
-        
+
 
 class AboutHelpHtmlWindow(wx.html.HtmlWindow):
     def __init__(self, parent):
@@ -8799,7 +8782,6 @@ class AboutHelpDialog(wx.Dialog):
     
     def OnRightUp(self, event):  # @UnusedVariable
         self.Destroy()
-
 
 
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
