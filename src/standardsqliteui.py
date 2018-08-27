@@ -8,7 +8,7 @@
 # You can redistribute it and/or modify it under the
 # terms of the Do What The Fuck You Want To  MIT License
 # as published by Zhichao Wang. contact: ziccowarn@gmail.com for more details.
-#
+# 
 # Copyright © 2018 Zhichao Wang <ziccowarn@gmail.com>
 #
 #
@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-14'
+__updated__ = '2018-08-27'
 
 
 
@@ -8007,6 +8007,8 @@ class SQLExecuteSQLPage(wx.Panel):
         self.sqlitepath = ""
         self.sqltable = ""
         
+        self.iUidSqlPage = 0
+        
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         ##### image buttons
         headSizerh = wx.BoxSizer(wx.HORIZONTAL)
@@ -8059,6 +8061,56 @@ class SQLExecuteSQLPage(wx.Panel):
         self.MySQLNotebook.AddPage(tab, "SQL 3")
         self.sizer.Add(self.MySQLNotebook, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizerAndFit(self.sizer)
+        
+        self.BitMapButtonAddTab.Bind(wx.EVT_BUTTON, self.OnImgBtnTabOpenClicked)
+        self.BitMapButtonOpenSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnOpenSQLClicked)
+        self.BitMapButtonSaveSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnSaveSQLClicked)
+        self.BitMapButtonPlaySQL.Bind(wx.EVT_BUTTON, self.OnImgBtnPlaySQLClicked)
+        self.BitMapButtonStepSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnStepSQLClicked)
+        
+    def OnImgBtnTabOpenClicked(self, event):  # @UnusedVariable
+        if self.iUidSqlPage == 0:
+            self.iUidSqlPage = self.MySQLNotebook.GetPageCount() + 1
+        else:
+            self.iUidSqlPage += 1
+        strNewTabName = "SQL %s" % self.iUidSqlPage
+        tab = SQLNotebookTab(self.MySQLNotebook)
+        self.MySQLNotebook.AddPage(tab, strNewTabName)
+        
+    def OnImgBtnOpenSQLClicked(self, event):  # @UnusedVariable
+        dlg = wx.FileDialog(
+            self, message="Please select a SQL file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="SQL file (*.sql) | *.sql",
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+        if dlg.ShowModal() == wx.ID_OK:
+            if dlg.GetPath() != "":
+                print dlg.GetPath()
+        else:
+            pass
+        
+    def OnImgBtnSaveSQLClicked(self, event):  # @UnusedVariable
+        with wx.FileDialog(self, "Save SQL file", wildcard="SQL files (*.sql)|*.sql",
+                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+    
+            # save the current contents in the file
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'w') as file:  # @ReservedAssignment
+                    self.doSaveData(file)
+            except IOError:
+                wx.LogError("Cannot save current data in file '%s'." % pathname)
+
+    def OnImgBtnPlaySQLClicked(self, event):
+        pass
+    
+    def OnImgBtnStepSQLClicked(self, event):
+        pass
 
 
 class SQLNotebookTab(wx.Panel):
