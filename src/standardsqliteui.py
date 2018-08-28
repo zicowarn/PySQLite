@@ -33,6 +33,7 @@ import wx.combo
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
+import wx.lib.agw.hypertreelist as HTL
 from wx.lib.splitter import MultiSplitterWindow
 from wx.lib.embeddedimage import PyEmbeddedImage
 
@@ -43,6 +44,7 @@ except ImportError:  # if it's not there locally, try the wxPython lib.
 
 import sqlite3
 import os, sys
+import re
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -6458,6 +6460,26 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
             self.Select(x, on=0)
 
 
+class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList):
+    def __init__(self, *args, **kwargs):
+        HTL.HyperTreeList.__init__(self, *args, **kwargs)
+        self.listSelectedItems = []
+        
+    def GetAllSelectionIndex(self):
+        for x in xrange(0, self.GetItemCount(), 1):
+            # if not self.GetItem(x).GetImage():
+            self.Select(x, on=0)
+    
+    def ClearAllRows(self):
+        self.DeleteAllItems()
+    
+    def ClearAllSelection(self):
+        for x in xrange(0, self.GetItemCount(), 1):
+            # if not self.GetItem(x).GetImage():
+            self.Select(x, on=0)
+
+
+
 class SQLiteTableUIGridStandard(wx.grid.Grid):
     def __init__(self, *args, **kwargs):
         wx.grid.Grid.__init__(self, *args, **kwargs)
@@ -7327,17 +7349,18 @@ class SQLPreviewPage(wx.Panel):
             changeCallback=self.OnOpenDatabaseCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
-        self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
-        self.listCtrl.InsertColumn(0, GetTranslationText(1015, "Name"))
-        self.listCtrl.InsertColumn(1, GetTranslationText(1016, "Type"))
-        self.listCtrl.SetColumnWidth(0, 600)
-        self.listCtrl.Arrange()
+        self.listCtrl = SQLiteUIHyperTreeListCtrlStandard(self, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=wx.BORDER_NONE | wx.LC_REPORT,
+                 agwStyle=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_NO_LINES | wx.TR_ROW_LINES | wx.TR_TWIST_BUTTONS | wx.TR_FULL_ROW_HIGHLIGHT)
+        self.listCtrl.AddColumn(GetTranslationText(1015, "Name"))
+        self.listCtrl.AddColumn(GetTranslationText(1016, "Type"))
+        self.listCtrl.AddColumn("Schema")
         
         #### Sizer, positing the widgets 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
-        self.listCtrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK , self.OnContextMenu)
+        self.listCtrl.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK , self.OnContextMenu)
         
         self.strSQLitePath = ""
         self.conn = None
@@ -7346,6 +7369,7 @@ class SQLPreviewPage(wx.Panel):
         self.newcurs = None
         
         self.SetSizerAndFit(self.sizer)
+        self.sizer.Layout()
     
     def OnContextMenu(self, event):
 
@@ -7354,39 +7378,37 @@ class SQLPreviewPage(wx.Panel):
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        dummy_obj, _dummy_X, iColumn = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
-            if self.listCtrl.GetSelectedItemCount() == 1:
-                if self.listCtrl.IsSelected(iColumn):
-                    # make a menu
-                    if not hasattr(self, "popupIDView"):
-                        self.popupIDView = wx.NewId()
-                        self.popupIDViewInTab = wx.NewId()
-                        self.popupIDRename = wx.NewId()
-                        self.popupIDDrop = wx.NewId()
-                        self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
-                        self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDViewInTab)
-                        self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
-                        self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
-                    
-                    menu = wx.Menu()
-                    itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
-                    itemViewInTab = wx.MenuItem(menu, self.popupIDViewInTab, GetTranslationText(1057, "View Table (in single Tab)"))
-                    itemRename = wx.MenuItem(menu, self.popupIDRename, GetTranslationText(1045, "Rename table"))
-                    itemDrop = wx.MenuItem(menu, self.popupIDDrop, GetTranslationText(1047, "Rename table"))
-                    menu.AppendItem(itemView)
-                    menu.AppendItem(itemViewInTab)
-                    menu.AppendItem(itemRename)
-                    menu.AppendItem(itemDrop)
-                    # add some other items
-                    self.PopupMenu(menu)
-                    menu.Destroy()
-                    event.Skip()
-                else:
-                    event.Skip()
+            if self.listCtrl.IsSelected(event.GetItem()):
+                # make a menu
+                if not hasattr(self, "popupIDView"):
+                    self.popupIDView = wx.NewId()
+                    self.popupIDViewInTab = wx.NewId()
+                    self.popupIDRename = wx.NewId()
+                    self.popupIDDrop = wx.NewId()
+                    self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
+                    self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDViewInTab)
+                    self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
+                    self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
+                
+                menu = wx.Menu()
+                itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
+                itemViewInTab = wx.MenuItem(menu, self.popupIDViewInTab, GetTranslationText(1057, "View Table (in single Tab)"))
+                itemRename = wx.MenuItem(menu, self.popupIDRename, GetTranslationText(1045, "Rename table"))
+                itemDrop = wx.MenuItem(menu, self.popupIDDrop, GetTranslationText(1047, "Rename table"))
+                menu.AppendItem(itemView)
+                menu.AppendItem(itemViewInTab)
+                menu.AppendItem(itemRename)
+                menu.AppendItem(itemDrop)
+                # add some other items
+                self.PopupMenu(menu)
+                menu.Destroy()
+                event.Skip()
             else:
                 event.Skip()
+      
                 
     def OnMenuDropSelected(self, event):  # @UnusedVariable
         if self.listCtrl.GetSelectedItemCount() == 1:
@@ -7499,17 +7521,60 @@ class SQLPreviewPage(wx.Panel):
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
                 self.curs = self.conn.cursor()
                 self.GrandParent.ViewTablePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
-                self.curs.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                # TABLES 
+                self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='table';")
                 listOfTuple = self.curs.fetchall()
                 if not listOfTuple:
                     pass
                 else:
-                    self.listCtrl.DeleteAllItems()
                     listOfTables = map(lambda lt : lt[0] , listOfTuple)
                     self.GrandParent.ViewTablePage.InitBitMapComboTablesList(listOfTables)
-                    for strTable in listOfTables:
-                        self.listCtrl.Append([strTable, self.GetTableTypeByTableName(strTable=strTable)])
-                    self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                    self.nodeRootTables = self.listCtrl.AddRoot("Tables (%s)" % len(listOfTables))
+                    self.listCtrl.SetPyData(self.nodeRootTables, None)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, 24, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, 13, which=wx.TreeItemIcon_Expanded)
+                    num = 0
+                    for tupleTable in listOfTuple:
+                        child = self.listCtrl.AppendItem(self.nodeRootTables, tupleTable[0])
+                        if (num % 2) == 0:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
+                        else:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.NullColour)
+                        self.listCtrl.SetPyData(child, None)
+                        # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
+                        strSchema = tupleTable[1].replace('\n', " ")
+                        self.listCtrl.SetItemText(child, strSchema, 2)
+                        self.listCtrl.SetItemImage(child, 24, which=wx.TreeItemIcon_Normal)
+                        self.listCtrl.SetItemImage(child, 13, which=wx.TreeItemIcon_Expanded)
+                        strFieldType = strSchema[strSchema.find("(") + 1: (len(strSchema) - strSchema[::-1].find(")") - 1)]
+                        listTypes = strFieldType.split(",")
+                        if not listTypes:
+                            pass
+                        else:
+                            jnum = 0
+                            for itemOfTypes in listTypes:  #
+                                typeTypes = filter(None, itemOfTypes.split(" "))
+                                grandson = self.listCtrl.AppendItem(child, typeTypes[0])
+                                if (num % 2) == 0:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                else:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                self.listCtrl.SetPyData(grandson, None)
+                                self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
+                                self.listCtrl.SetItemText(grandson, itemOfTypes, 2)
+                                jnum += 1
+                            # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                        num += 1
+                    # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                    self.listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+                    self.listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+                    self.listCtrl.Expand(self.nodeRootTables)
                     # add the first sql tab
                     self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
