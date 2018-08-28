@@ -7411,10 +7411,10 @@ class SQLPreviewPage(wx.Panel):
       
                 
     def OnMenuDropSelected(self, event):  # @UnusedVariable
-        if self.listCtrl.GetSelectedItemCount() == 1:
+        if len(self.listCtrl.GetSelections()) == 1:
             # get old sqlite table name
-            index = self.listCtrl.GetFirstSelected()
-            dropSQliteTable = self.listCtrl.GetItem(index, 0).GetText()
+            itemSelected = self.listCtrl.GetSelection()
+            dropSQliteTable = self.listCtrl.GetSelection().GetText(0)
             
             message = GetTranslationText(1048, 'Please confirm, the selected tables will be dropped： ')
             message += "\n " + dropSQliteTable
@@ -7426,7 +7426,8 @@ class SQLPreviewPage(wx.Panel):
                 if dropSQliteTable != "":
                     # delete sqlite table on list ctrl
                     if self.DropSQLTable(strDropTable=dropSQliteTable):
-                        self.listCtrl.DeleteItem(index)
+                        self.listCtrl.Delete(itemSelected)
+                        self.listCtrl.Refresh()
                         dlg.Destroy()
                         return True
                     else:
@@ -7442,10 +7443,10 @@ class SQLPreviewPage(wx.Panel):
             return False
     
     def OnMenuRenameSelected(self, event):  # @UnusedVariable
-        if self.listCtrl.GetSelectedItemCount() == 1:
+        if len(self.listCtrl.GetSelections()) == 1:
             # get old sqlite table name
-            index = self.listCtrl.GetFirstSelected()
-            oldSqltableName = self.listCtrl.GetItem(index, 0).GetText()
+            itemSelected = self.listCtrl.GetSelection()
+            oldSqltableName = self.listCtrl.GetSelection().GetText(0)
             
             dlg = wx.TextEntryDialog(
                 self, GetTranslationText(1046, 'Please give your the new name of the selected table'),
@@ -7460,7 +7461,9 @@ class SQLPreviewPage(wx.Panel):
                 if newSqltableName.lower() != oldSqltableName.lower():
                     # reset sqlite table on list ctrl
                     if self.RenameSQLTable(newSqltableName, oldSqltableName):
-                        self.listCtrl.SetStringItem(index, 0, newSqltableName)
+                        self.listCtrl.SetItemText(itemSelected, newSqltableName, 0)
+                        self.listCtrl.SetFocus()
+                        self.listCtrl.SelectItem(itemSelected)
                         dlg.Destroy()
                         return True
                     else:
@@ -7479,9 +7482,8 @@ class SQLPreviewPage(wx.Panel):
         """
         30033 #TODO 
         """
-        if self.listCtrl.GetSelectedItemCount() == 1:
-            index = self.listCtrl.GetFirstSelected()
-            sqltable = self.listCtrl.GetItem(index, 0).GetText()
+        if len(self.listCtrl.GetSelections()) == 1:
+            sqltable = self.listCtrl.GetSelection().GetText(0)
             self.GrandParent.ViewTablePage.SetSelectionBitMapComboTablesList(sqltable)
             self.GrandParent.ViewTablePage.OnBitMapComboList(None)
             self.Parent.SetSelection(1)
@@ -7493,10 +7495,9 @@ class SQLPreviewPage(wx.Panel):
         """
         30033 #TODO 
         """
-        if self.listCtrl.GetSelectedItemCount() == 1:
-            index = self.listCtrl.GetFirstSelected()
-            sqltable = self.listCtrl.GetItem(index, 0).GetText()
-            sqltype = self.listCtrl.GetItem(index, 1).GetText()
+        if len(self.listCtrl.GetSelections()) == 1:
+            sqltable = self.listCtrl.GetSelection().GetText(0)
+            sqltype = self.GetTableTypeByTableName(strTable=sqltable)
             idPage = wx.NewId()
             idTab = self.GrandParent.iNewPreviewPageUniqueID
             strTabName = GetTranslationText(1022, "Preview-Tab") + str(idTab)
@@ -7527,6 +7528,7 @@ class SQLPreviewPage(wx.Panel):
                 if not listOfTuple:
                     pass
                 else:
+                    self.listCtrl.DeleteAllItems()
                     listOfTables = map(lambda lt : lt[0] , listOfTuple)
                     self.GrandParent.ViewTablePage.InitBitMapComboTablesList(listOfTables)
                     self.nodeRootTables = self.listCtrl.AddRoot("Tables (%s)" % len(listOfTables))
