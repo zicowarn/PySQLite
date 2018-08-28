@@ -44,7 +44,7 @@ except ImportError:  # if it's not there locally, try the wxPython lib.
 
 import sqlite3
 import os, sys
-import re
+
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -7575,6 +7575,10 @@ class SQLPreviewPage(wx.Panel):
                     self.listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
                     self.listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
                     self.listCtrl.Expand(self.nodeRootTables)
+                    
+                    # VIEWS
+                    # self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                    # PRAGMA table_info(test_bbbb);
                     # add the first sql tab
                     self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
