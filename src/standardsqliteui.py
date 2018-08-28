@@ -6455,7 +6455,7 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
     def ClearAllSelection(self):
         for x in xrange(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
-            self.Select(x, on=0) 
+            self.Select(x, on=0)
 
 
 class SQLiteTableUIGridStandard(wx.grid.Grid):
@@ -8123,6 +8123,7 @@ class SQLNotebookTab(wx.Panel):
         self.TabPanelSplitterWin = MultiSplitterWindow(self, wx.ID_ANY,
                                style=wx.SP_LIVE_UPDATE)
         
+        self.TabPanelSplitterWin.SetMinimumPaneSize(20)
         # sty = wx.BORDER_NONE
         # sty = wx.BORDER_SIMPLE
         # wx.BORDER_SUNKEN
@@ -8194,14 +8195,14 @@ class SQLNotebookTab(wx.Panel):
         sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
         if event.GetSashIdx() == 1:
             iFirstSashPostion = self.TabPanelSplitterWin.GetSashPosition(0)
-            if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 40:
+            if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 80:
                 event.Veto()
             else:
                 event.Skip()
         else:
             iSecondSashPostion = self.TabPanelSplitterWin.GetSashPosition(1)
-            if sizeCurrentTab[1] - (iSashPosition + iSecondSashPostion) < 40:
-                if (iSashPosition - iSecondSashPostion) > 40 and iSecondSashPostion >= 40:
+            if sizeCurrentTab[1] - (iSashPosition + iSecondSashPostion) < 80:
+                if (iSashPosition - iSecondSashPostion) > 80 and iSecondSashPostion > 80:
                     self.TabPanelSplitterWin.SetSashPosition(1, iSecondSashPostion)
                     event.Veto()
                 else:
