@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-27'
+__updated__ = '2018-08-28'
 
 
 
@@ -7972,7 +7972,7 @@ class SQLViewTablePage(wx.Panel):
         q += ",".join(["'||quote(" + col + ")||'" for col in column_names])
         q += ")' FROM '%(tbl_name)s' WHERE rowid IN (%(start_index)d, %(end_index)d)"
         sqlstring = q % {'tbl_name': self.sqltable, 'start_index': start_index, 'end_index' : (start_index + count_sum)}
-        print sqlstring
+        if DEBUG_STDOUT: print sqlstring
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
@@ -8042,10 +8042,10 @@ class SQLExecuteSQLPage(wx.Panel):
         
         ##### note book
         self.MySQLNotebook = FNB.FlatNotebook(self, wx.ID_ANY, agwStyle=FNB.FNB_NODRAG)
-        #tab = SQLNotebookTab(self.MySQLNotebook)
-        #self.MySQLNotebook.AddPage(tab, "SQL 1")
-        #tab = SQLNotebookTab(self.MySQLNotebook)
-        #self.MySQLNotebook.AddPage(tab, "SQL 2")
+        # tab = SQLNotebookTab(self.MySQLNotebook)
+        # self.MySQLNotebook.AddPage(tab, "SQL 1")
+        # tab = SQLNotebookTab(self.MySQLNotebook)
+        # self.MySQLNotebook.AddPage(tab, "SQL 2")
         
         self.sizer.Add(self.MySQLNotebook, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizerAndFit(self.sizer)
@@ -8087,7 +8087,7 @@ class SQLExecuteSQLPage(wx.Panel):
             )
         if dlg.ShowModal() == wx.ID_OK:
             if dlg.GetPath() != "":
-                print dlg.GetPath()
+                if DEBUG_STDOUT: print dlg.GetPath()
         else:
             pass
         
@@ -8159,7 +8159,7 @@ class SQLNotebookTab(wx.Panel):
         
         # part 2, for sql results
         self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
-        #self.WinSQLResults.SetBackgroundColour("sky blue")
+        # self.WinSQLResults.SetBackgroundColour("sky blue")
         wx.StaticText(self.WinSQLResults, -1, "Panel Two", (5, 5))
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
         
@@ -8189,7 +8189,7 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
     def OnMSPChanging(self, event):
-        print "Changing sash:%d  %s\n" % (event.GetSashIdx(), event.GetSashPosition())
+        if DEBUG_STDOUT: print "Changing sash:%d  %s\n" % (event.GetSashIdx(), event.GetSashPosition()),
         iSashPosition = event.GetSashPosition()
         sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
         if event.GetSashIdx() == 1:
@@ -8198,9 +8198,19 @@ class SQLNotebookTab(wx.Panel):
                 event.Veto()
             else:
                 event.Skip()
+        else:
+            iSecondSashPostion = self.TabPanelSplitterWin.GetSashPosition(1)
+            if sizeCurrentTab[1] - (iSashPosition + iSecondSashPostion) < 40:
+                if (iSashPosition - iSecondSashPostion) > 40 and iSecondSashPostion >= 40:
+                    self.TabPanelSplitterWin.SetSashPosition(1, iSecondSashPostion)
+                    event.Veto()
+                else:
+                    event.Veto()
+            else:
+                event.Skip()
         
     def OnMSPChanged(self, event):
-        print "Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition())
+        if DEBUG_STDOUT: print "Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()),
     
     def OnSTCDestroy(self, event):
         # This is how the clipboard contents can be preserved after
@@ -8209,7 +8219,7 @@ class SQLNotebookTab(wx.Panel):
         event.Skip()
 
     def OnSTCStartDrag(self, event):
-        print "OnStartDrag: %d, %s" \
+        if DEBUG_STDOUT: print "OnStartDrag: %d, %s" \
                        % (event.GetDragAllowMove(), event.GetDragText())
 
         if event.GetPosition() < 250:
@@ -8218,14 +8228,14 @@ class SQLNotebookTab(wx.Panel):
             # event.SetDragText("")             # or prevent the drag with empty text
 
     def OnSTCDragOver(self, event):
-        print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
+        if DEBUG_STDOUT: print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
             % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult())
 
         if event.GetPosition() < 250:
             event.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
 
     def OnSTCDoDrop(self, event):
-        print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
+        if DEBUG_STDOUT: print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
                        "\ttext: %s" \
                        % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult(),
                           event.GetDragText())
@@ -8245,7 +8255,7 @@ class SQLNotebookTab(wx.Panel):
         # shift=event.ShiftDown()
         alt = event.AltDown()
   
-        if key == wx.WXK_SPACE and control and not self.AutoCompActive():
+        if key == wx.WXK_SPACE and control and not self.STCSQLCommands.AutoCompActive():
             self.AutoComplete()
         elif key == ord('X') and control and not alt:
             self.OnSTCCut()
@@ -8280,7 +8290,7 @@ class SQLNotebookTab(wx.Panel):
             event.Skip()
     
     def OnSTCModified(self, event):
-        print """OnModified \
+        if DEBUG_STDOUT: print """OnModified \
         Mod type:     %s \
         At position:  %d \
         Lines added:  %d \
@@ -8317,13 +8327,13 @@ class SQLNotebookTab(wx.Panel):
             end = start + len(metadata_saved)
             new_text_lines = [self.STCSQLCommands.GetLineText(i + 1) for i in range(start, end)]
             if metadata_saved and original_text_lines == new_text_lines:
-                # #print "restoring", start, metadata_saved
+                # #if DEBUG_STDOUT: print "restoring", start, metadata_saved
                 self.metadata[start:end] = metadata_saved
                 self.clipboard = None
         return ret
         
     def OnSTCUndo(self):
-        print "UNDO!"
+        if DEBUG_STDOUT: print "UNDO!"
         
     def TransModTypeOfSTC(self, modType):
         st = ""
@@ -8656,7 +8666,7 @@ class NewPreviewPage(wx.Panel):
         q += ",".join(["'||quote(" + col + ")||'" for col in column_names])
         q += ")' FROM '%(tbl_name)s' WHERE rowid IN (%(start_index)d, %(end_index)d)"
         sqlstring = q % {'tbl_name': self.sqltable, 'start_index': start_index, 'end_index' : (start_index + count_sum)}
-        print sqlstring
+        if DEBUG_STDOUT: print sqlstring
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
@@ -8810,31 +8820,39 @@ class MainFrame(wx.Frame):
                           GetTranslationText(1027, "Close this frame"))
         # Add menu to the menu bar
         menuBar.Append(self.menu1, GetTranslationText(1028, "&File"))
-
+        
         # 2nd menu from left
         self.menu2 = wx.Menu()
-        self.menu2.AppendCheckItem(200, GetTranslationText(1029, "&Preview"),
-                                    GetTranslationText(1030, "Preview a table infos of SQLite"))
-        self.menu2.AppendCheckItem(204, GetTranslationText(1055, "&Data View"),
-                                   GetTranslationText(1056, "View a table of SQLite"))
-        self.menu2.AppendCheckItem(205, GetTranslationText(1065, "&Execute SQL"),
-                                   GetTranslationText(1066, "Execute SQL command line"))
-        self.menu2.AppendCheckItem(201, GetTranslationText(1031, "&Import"),
-                                   GetTranslationText(1032, "Import a table into SQLite"))
-        self.menu2.AppendCheckItem(202, GetTranslationText(1033, "&Export"),
-                                   GetTranslationText(1034, "Export a table from SQLite"))
-        self.menu2.AppendCheckItem(203, GetTranslationText(1035, "&Migrate"),
-                                   GetTranslationText(1036, "Migrate a table between SQLites"))
-        
-        # Append 2nd menu
-        menuBar.Append(self.menu2, GetTranslationText(1037, "&Edit"))
+        self.menu2.Append(201, "&Create new table", "Create new table")
+        it201 = self.menu2.FindItemById(201)
+        it201.Enable(False)
+        # Add menu to the menu bar
+        menuBar.Append(self.menu2, GetTranslationText(1028, "&Edit"))
 
-        # 2nd menu from left
+        # 3rd menu from left
         self.menu3 = wx.Menu()
-        self.menu3.Append(301, GetTranslationText(1038, "&Info"))
-        self.menu3.Append(302, GetTranslationText(1039, "&Help"))
-        # Append 2nd menu
-        menuBar.Append(self.menu3, GetTranslationText(1040, "&Extra"))
+        self.menu3.Append(300, GetTranslationText(1029, "&Preview"),
+                                    GetTranslationText(1030, "Preview a table infos of SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(304, GetTranslationText(1055, "&Data View"),
+                                   GetTranslationText(1056, "View a table of SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(305, GetTranslationText(1065, "&Execute SQL"),
+                                   GetTranslationText(1066, "Execute SQL command line"), wx.ITEM_RADIO)
+        self.menu3.Append(301, GetTranslationText(1031, "&Import"),
+                                   GetTranslationText(1032, "Import a table into SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(302, GetTranslationText(1033, "&Export"),
+                                   GetTranslationText(1034, "Export a table from SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(303, GetTranslationText(1035, "&Migrate"),
+                                   GetTranslationText(1036, "Migrate a table between SQLites"), wx.ITEM_RADIO)
+        
+        # Append 3rd menu
+        menuBar.Append(self.menu3, "&View")
+
+        # 4rd menu from left
+        self.menu4 = wx.Menu()
+        self.menu4.Append(401, GetTranslationText(1038, "&Info"))
+        self.menu4.Append(402, GetTranslationText(1039, "&Help"))
+        # Append 4rd menu
+        menuBar.Append(self.menu4, GetTranslationText(1040, "&Extra"))
 
         self.SetMenuBar(menuBar)
         
@@ -8842,7 +8860,7 @@ class MainFrame(wx.Frame):
                                   aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         
         self.PreveiwPage = SQLPreviewPage(self.nb)
-        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"))
+        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"), wx.ITEM_RADIO)
         self.ViewTablePage = SQLViewTablePage(self.nb)
         self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
         self.ExecutePage = SQLExecuteSQLPage(self.nb)
@@ -8864,19 +8882,19 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.Menu101, id=101)
 
-        self.Bind(wx.EVT_MENU, self.Menu200, id=200)
-        self.Bind(wx.EVT_MENU, self.Menu201, id=201)
-        self.Bind(wx.EVT_MENU, self.Menu202, id=202)
-        self.Bind(wx.EVT_MENU, self.Menu203, id=203)
+        self.Bind(wx.EVT_MENU, self.Menu300, id=300)
         self.Bind(wx.EVT_MENU, self.Menu301, id=301)
         self.Bind(wx.EVT_MENU, self.Menu302, id=302)
-
+        self.Bind(wx.EVT_MENU, self.Menu303, id=303)
+        self.Bind(wx.EVT_MENU, self.Menu304, id=304)
+        self.Bind(wx.EVT_MENU, self.Menu305, id=305)
+        self.Bind(wx.EVT_MENU, self.Menu401, id=401)
+        self.Bind(wx.EVT_MENU, self.Menu402, id=402)
         # Range of menu items
 
-        
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClose)
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
-        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuEditOpen)
+        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuViewOpen)
         # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
         self.Show()
     
@@ -8888,36 +8906,43 @@ class MainFrame(wx.Frame):
         if item:
             text = item.GetText()  # @UnusedVariable
             help = item.GetHelp()  # @ReservedAssignment
-            
         # but in this case just call Skip so the default is done
         event.Skip() 
 
     def Menu101(self, event):  # @UnusedVariable
         self.Close()
 
-    def Menu200(self, event):  # @UnusedVariable
+    def Menu300(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Preview Menu Clicked \n'
         self.nb.SetSelection(0)
 
-    def Menu201(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Import Menu Clicked\n'
-        self.nb.SetSelection(1)
-
-    def Menu202(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Export Menu Clicked'
-        self.nb.SetSelection(2)
-
-    def Menu203(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Migrate Menu Clicked'
-        self.nb.SetSelection(3)
-            
     def Menu301(self, event):  # @UnusedVariable
+        if DEBUG_STDOUT : 'Import Menu Clicked\n'
+        self.nb.SetSelection(3)
+
+    def Menu302(self, event):  # @UnusedVariable
+        if DEBUG_STDOUT : 'Export Menu Clicked'
+        self.nb.SetSelection(4)
+
+    def Menu303(self, event):  # @UnusedVariable
+        if DEBUG_STDOUT : 'Migrate Menu Clicked'
+        self.nb.SetSelection(5)
+    
+    def Menu304(self, event):  # @UnusedVariable
+        if DEBUG_STDOUT : 'Data View Menu Clicked'
+        self.nb.SetSelection(1)
+        
+    def Menu305(self, event):  # @UnusedVariable
+        if DEBUG_STDOUT : 'Execute SQL Menu Clicked'
+        self.nb.SetSelection(2)
+            
+    def Menu401(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Migrate Menu Clicked'
         dlg = AboutInfoDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
     
-    def Menu302(self, event):  # @UnusedVariable
+    def Menu402(self, event):  # @UnusedVariable
         if DEBUG_STDOUT : 'Migrate Menu Clicked'
         dlg = AboutHelpDialog(self)
         dlg.ShowModal()
@@ -8955,25 +8980,25 @@ class MainFrame(wx.Frame):
     def OnUpdateMenu(self, event):
         pass
     
-    def OnMenuEditOpen(self, event):
-        if event.GetMenu().GetMenuItems()[0].GetId() == 200:
+    def OnMenuViewOpen(self, event):
+        if event.GetMenu().GetMenuItems()[0].GetId() == 300:
             lt = [False] * 6
             index = self.nb.GetSelection()
             if index > 5:
-                self.menu2.FindItemByPosition(0).Check(lt[0])
-                self.menu2.FindItemByPosition(1).Check(lt[1])
-                self.menu2.FindItemByPosition(2).Check(lt[2])
-                self.menu2.FindItemByPosition(3).Check(lt[3])
-                self.menu2.FindItemByPosition(4).Check(lt[4])
-                self.menu2.FindItemByPosition(5).Check(lt[5])
+                self.menu3.FindItemByPosition(0).Check(lt[0])
+                self.menu3.FindItemByPosition(1).Check(lt[1])
+                self.menu3.FindItemByPosition(2).Check(lt[2])
+                self.menu3.FindItemByPosition(3).Check(lt[3])
+                self.menu3.FindItemByPosition(4).Check(lt[4])
+                self.menu3.FindItemByPosition(5).Check(lt[5])
             else:
                 lt[index] = True
-                self.menu2.FindItemByPosition(0).Check(lt[0])
-                self.menu2.FindItemByPosition(1).Check(lt[1])
-                self.menu2.FindItemByPosition(2).Check(lt[2])
-                self.menu2.FindItemByPosition(3).Check(lt[3])
-                self.menu2.FindItemByPosition(4).Check(lt[4])
-                self.menu2.FindItemByPosition(5).Check(lt[5])
+                self.menu3.FindItemByPosition(0).Check(lt[0])
+                self.menu3.FindItemByPosition(1).Check(lt[1])
+                self.menu3.FindItemByPosition(2).Check(lt[2])
+                self.menu3.FindItemByPosition(3).Check(lt[3])
+                self.menu3.FindItemByPosition(4).Check(lt[4])
+                self.menu3.FindItemByPosition(5).Check(lt[5])
         else:
             pass
 
