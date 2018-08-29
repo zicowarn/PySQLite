@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-28'
+__updated__ = '2018-08-29'
 
 
 
@@ -5884,6 +5884,142 @@ iconTable = PyEmbeddedImage(
     "ZQAyMDA4LTEwLTIzVDExOjU5OjUwKzA4OjAwvN94aQAAAABJRU5ErkJggg==")
 
 
+iconView = PyEmbeddedImage(
+    "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")
+
+
+iconIndex = PyEmbeddedImage(
+    "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")
+
+
+iconTrigger = PyEmbeddedImage(
+    "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"
+    "gg==")
+
+
+iconType = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEU2QUxye4VocXpmbndq"
+    "c310fohweoTFz9ltdoBveIL///8AAAAAAAAAAAAAAAAAAABMPK6yAAAAC3RSTlP/////////"
+    "////AEpPAfIAAAABYktHRA8YugDZAAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQ"
+    "AAAAEABcxq3DAAAAOUlEQVQI12NYBQUM+BgLGICAC8hYVhXAujwLLCXACFUzgRPKaOCAMhxY"
+    "oAwFJijDgBnCWAAyBp9dAExISA7e1HJGAAAAJXRFWHRjcmVhdGUtZGF0ZQAyMDA4LTEwLTIz"
+    "VDExOjU4OjM2KzA4OjAwqRNZ3gAAACV0RVh0bW9kaWZ5LWRhdGUAMjAwOC0xMC0yM1QxMTo1"
+    "OTo1MCswODowMLzfeGkAAAAASUVORK5CYII=")
+
+
 iconPlay = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
     "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCyUCwj3lpgAABZhJREFUSMeNlm2MXFUZ"
@@ -6041,6 +6177,8 @@ iconTableViewSave = PyEmbeddedImage(
     "1UajoarC5JiY0O10njx5EmPEo/Iv4RlKVIQphaNpmt530QAU2z2/6UotI6CysfHWXqOWVZnA"
     "5c8QbKajAaoQALVa7eTkZC21Xq/X7/dF5DP555ffKwQ7STflwcd/vEy+++E354SI+n8toDa7"
     "fJ5/s/tm4v+x/gWWI77j/9sMQwAAAABJRU5ErkJggg==")
+
+
 
 
 
@@ -6441,9 +6579,10 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
             self.Select(x, on=0)
 
 
-class SQLiteUIListCtrlStandard(wx.ListCtrl):
+class SQLiteUIListCtrlStandard(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
         self.listSelectedItems = []
         
     def GetAllSelectionIndex(self):
@@ -6460,9 +6599,10 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
             self.Select(x, on=0)
 
 
-class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList):
+class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         HTL.HyperTreeList.__init__(self, *args, **kwargs)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
         self.listSelectedItems = []
         
     def GetAllSelectionIndex(self):
@@ -7351,10 +7491,12 @@ class SQLPreviewPage(wx.Panel):
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIHyperTreeListCtrlStandard(self, id=wx.ID_ANY, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=wx.BORDER_NONE | wx.LC_REPORT,
-                 agwStyle=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_NO_LINES | wx.TR_ROW_LINES | wx.TR_TWIST_BUTTONS | wx.TR_FULL_ROW_HIGHLIGHT)
+                 agwStyle=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_NO_LINES | wx.TR_ROW_LINES | wx.TR_TWIST_BUTTONS | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HIDE_ROOT)
         self.listCtrl.AddColumn(GetTranslationText(1015, "Name"))
         self.listCtrl.AddColumn(GetTranslationText(1016, "Type"))
         self.listCtrl.AddColumn("Schema")
+        self.nodeRoot = self.listCtrl.AddRoot("")
+        self.listCtrl.setResizeColumn(3)
         
         #### Sizer, positing the widgets 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -7528,10 +7670,10 @@ class SQLPreviewPage(wx.Panel):
                 if not listOfTuple:
                     pass
                 else:
-                    self.listCtrl.DeleteAllItems()
+                    self.listCtrl.DeleteChildren(self.nodeRoot)
                     listOfTables = map(lambda lt : lt[0] , listOfTuple)
                     self.GrandParent.ViewTablePage.InitBitMapComboTablesList(listOfTables)
-                    self.nodeRootTables = self.listCtrl.AddRoot("Tables (%s)" % len(listOfTables))
+                    self.nodeRootTables = self.listCtrl.AppendItem(self.nodeRoot, "Tables (%s)" % len(listOfTables))
                     self.listCtrl.SetPyData(self.nodeRootTables, None)
                     self.listCtrl.SetItemImage(self.nodeRootTables, 24, which=wx.TreeItemIcon_Normal)
                     self.listCtrl.SetItemImage(self.nodeRootTables, 13, which=wx.TreeItemIcon_Expanded)
@@ -7569,20 +7711,70 @@ class SQLPreviewPage(wx.Panel):
                                         self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
                                 self.listCtrl.SetPyData(grandson, None)
                                 self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
-                                self.listCtrl.SetItemText(grandson, itemOfTypes, 2)
+                                self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (typeTypes[0], ' '.join(typeTypes[1:]))), 2)
                                 jnum += 1
                             # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
                         num += 1
-                    # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-                    self.listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-                    self.listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
-                    self.listCtrl.Expand(self.nodeRootTables)
-                    
-                    # VIEWS
-                    # self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
-                    # PRAGMA table_info(test_bbbb);
-                    # add the first sql tab
-                    self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
+                
+                # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                self.listCtrl.SetColumnWidth(0, 200)
+                # self.listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+                self.listCtrl.Expand(self.nodeRootTables)
+                # VIEWS 
+                # self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                # PRAGMA table_info(test_bbbb);
+                # add the first sql tab
+                self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                listOfTuple = self.curs.fetchall()
+                if not listOfTuple:
+                    pass
+                else:
+                    listOfViews = map(lambda lt : lt[0] , listOfTuple)
+                    self.nodeRootViews = self.listCtrl.AppendItem(self.nodeRoot, "Views (%s)" % len(listOfViews))
+                    self.listCtrl.SetPyData(self.nodeRootViews, None)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, 24, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, 13, which=wx.TreeItemIcon_Expanded)
+                    num = 0
+                    for tupleView in listOfTuple:
+                        child = self.listCtrl.AppendItem(self.nodeRootViews, tupleView[0])
+                        if (num % 2) == 0:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
+                        else:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.NullColour)
+                        self.listCtrl.SetPyData(child, None)
+                        # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
+                        strSchema = tupleView[1].replace('\n', " ")
+                        self.listCtrl.SetItemText(child, strSchema, 2)
+                        self.listCtrl.SetItemImage(child, 24, which=wx.TreeItemIcon_Normal)
+                        self.listCtrl.SetItemImage(child, 13, which=wx.TreeItemIcon_Expanded)
+                        # type of view
+                        self.curs.execute("PRAGMA table_info(%s);" % tupleView[0])
+                        listTypesOfView = self.curs.fetchall()
+                        # Index, filed_name, type, Not null, Default value, PRIMARY  key
+                        if not listTypesOfView:
+                            pass
+                        else:
+                            jnum = 0
+                            for itemOfTypes in listTypesOfView:  #
+                                grandson = self.listCtrl.AppendItem(child, itemOfTypes[1])
+                                if (num % 2) == 0:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                else:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                self.listCtrl.SetPyData(grandson, None)
+                                self.listCtrl.SetItemText(grandson, itemOfTypes[2], 1)
+                                self.listCtrl.SetItemText(grandson, ("`%s`  %s " % (itemOfTypes[1], itemOfTypes[2])), 2)
+                                jnum += 1
+                            # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                        num += 1
+                
+                self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
             except:
                 return False
