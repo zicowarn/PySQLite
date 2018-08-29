@@ -7727,7 +7727,10 @@ class SQLPreviewPage(wx.Panel):
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
                 self.curs = self.conn.cursor()
+                # pass params to view page
                 self.GrandParent.ViewTablePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
+                # pass params to execute page
+                self.GrandParent.ExecutePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePat)
                 # TABLES 
                 self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='table';")
                 listOfTuple = self.curs.fetchall()
@@ -8395,6 +8398,23 @@ class SQLExecuteSQLPage(wx.Panel):
             self.bDatabaseIsReady = True
         else:
             self.bDatabaseIsReady = True
+            
+    def ConnectSQLite(self):
+        try:
+            if self.conn == None or self.curs == None:
+                self.conn = sqlite3.connect(self.sqlitepath)
+                self.curs = self.conn.cursor()
+                return True
+            else:
+                return True
+        except:
+            return False
+    
+    def SetDatabaseParams(self, conn=None, curs=None, sqlitepath=""):
+        self.conn = conn
+        self.curs = curs
+        self.sqlitepath = sqlitepath
+        self.ConnectSQLite()
         
     def OnImgBtnTabOpenClicked(self, event):  # @UnusedVariable
         if self.bDatabaseIsReady:
@@ -8437,11 +8457,30 @@ class SQLExecuteSQLPage(wx.Panel):
             except IOError:
                 wx.LogError("Cannot save current data in file '%s'." % pathname)
 
-    def OnImgBtnPlaySQLClicked(self, event):
-        pass
+    def OnImgBtnPlaySQLClicked(self, event):  # @UnusedVariable
+        iSelected = self.MySQLNotebook.GetSelection()
+        pageSelected = self.MySQLNotebook.GetPage(iSelected)
+        strAllText = pageSelected.STCSQLCommands.GetTextUTF8()
+        sqlScript = strAllText.replace("\n", ";\n")
+        if DEBUG_STDOUT: print sqlScript
+        try:
+            self.curs.executescript(sqlScript)
+            return True
+        except sqlite3.OperationalError as e:  # @UnusedVariable
+            return False
+        except Exception as e:  # @UnusedVariable
+            return False
     
-    def OnImgBtnStepSQLClicked(self, event):
-        pass
+    def OnImgBtnStepSQLClicked(self, event):  # @UnusedVariable
+        iSelected = self.MySQLNotebook.GetSelection()
+        pageSelected = self.MySQLNotebook.GetPage(iSelected)
+        strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLineUTF8()
+        if DEBUG_STDOUT: print strCurLine
+        try:
+            self.curs.execute(strCurLine + ";")
+            return True
+        except sqlite3.OperationalError:
+            return False
 
 
 class SQLNotebookTab(wx.Panel):
