@@ -6180,8 +6180,6 @@ iconTableViewSave = PyEmbeddedImage(
 
 
 
-
-
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
@@ -6604,6 +6602,63 @@ class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoW
         HTL.HyperTreeList.__init__(self, *args, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
         self.listSelectedItems = []
+        
+    #Override
+    def _doResize(self):
+        """ Resize the last column as appropriate.
+            This method was override to adapt mac ox os
+
+            If the list's columns are too wide to fit within the window, we use
+            a horizontal scrollbar.  Otherwise, we expand the right-most column
+            to take up the remaining free space in the list.
+
+            We remember the current size of the last column, before resizing,
+            as the preferred minimum width if we haven't previously been given
+            or calculated a minimum width.  This ensure that repeated calls to
+            _doResize() don't cause the last column to size itself too large.
+        """
+        
+        if not self:  # avoid a PyDeadObject error
+            return
+
+        if self.GetSize().height < 32:
+            return  # avoid an endless update bug when the height is small.
+        
+        numCols = self.GetColumnCount()
+        if numCols == 0: return # Nothing to resize.
+
+        if(self._resizeColStyle == "LAST"):
+            resizeCol = self.GetColumnCount()
+        else:
+            resizeCol = self._resizeCol
+
+        resizeCol = max(1, resizeCol)
+
+        if self._resizeColMinWidth == None:
+            self._resizeColMinWidth = self.GetColumnWidth(resizeCol - 1)
+
+        # We're showing the vertical scrollbar -> allow for scrollbar width
+        # NOTE: on GTK, the scrollbar is included in the client size, but on
+        # Windows it is not included
+        listWidth = self.GetClientSize().width
+
+        totColWidth = 0 # Width of all columns except last one.
+        for col in range(numCols):
+            if col != (resizeCol-1):
+                totColWidth = totColWidth + self.GetColumnWidth(col)
+
+        resizeColWidth = self.GetColumnWidth(resizeCol - 1)  # @UnusedVariable
+
+        if totColWidth + self._resizeColMinWidth > listWidth:
+            # We haven't got the width to show the last column at its minimum
+            # width -> set it to its minimum width and allow the horizontal
+            # scrollbar to show.
+            self.SetColumnWidth(resizeCol-1, self._resizeColMinWidth)
+            return
+
+        # Resize the last column to take up the remaining available space.
+
+        self.SetColumnWidth(resizeCol-1, listWidth - totColWidth)
         
     def GetAllSelectionIndex(self):
         for x in xrange(0, self.GetItemCount(), 1):
@@ -7498,6 +7553,15 @@ class SQLPreviewPage(wx.Panel):
         self.nodeRoot = self.listCtrl.AddRoot("")
         self.listCtrl.setResizeColumn(3)
         
+        image_list = wx.ImageList(16, 16)
+        self.imgTable = image_list.Add(iconTable.GetImage().Scale(16,16).ConvertToBitmap())
+        self.imgView = image_list.Add(iconView.GetImage().Scale(16,16).ConvertToBitmap())
+        self.imgIndex = image_list.Add(iconIndex.GetImage().Scale(16,16).ConvertToBitmap())
+        self.imgTrigger = image_list.Add(iconTrigger.GetImage().Scale(16,16).ConvertToBitmap())
+        self.imgType    = image_list.Add(iconType.GetImage().Scale(16,16).ConvertToBitmap())
+
+        self.listCtrl.AssignImageList(image_list)
+        
         #### Sizer, positing the widgets 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
@@ -7675,8 +7739,8 @@ class SQLPreviewPage(wx.Panel):
                     self.GrandParent.ViewTablePage.InitBitMapComboTablesList(listOfTables)
                     self.nodeRootTables = self.listCtrl.AppendItem(self.nodeRoot, "Tables (%s)" % len(listOfTables))
                     self.listCtrl.SetPyData(self.nodeRootTables, None)
-                    self.listCtrl.SetItemImage(self.nodeRootTables, 24, which=wx.TreeItemIcon_Normal)
-                    self.listCtrl.SetItemImage(self.nodeRootTables, 13, which=wx.TreeItemIcon_Expanded)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, -1, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, -1, which=wx.TreeItemIcon_Expanded)
                     num = 0
                     for tupleTable in listOfTuple:
                         child = self.listCtrl.AppendItem(self.nodeRootTables, tupleTable[0])
@@ -7688,8 +7752,8 @@ class SQLPreviewPage(wx.Panel):
                         # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
                         strSchema = tupleTable[1].replace('\n', " ")
                         self.listCtrl.SetItemText(child, strSchema, 2)
-                        self.listCtrl.SetItemImage(child, 24, which=wx.TreeItemIcon_Normal)
-                        self.listCtrl.SetItemImage(child, 13, which=wx.TreeItemIcon_Expanded)
+                        self.listCtrl.SetItemImage(child, self.imgTable, which=wx.TreeItemIcon_Normal)
+                        self.listCtrl.SetItemImage(child, self.imgTable, which=wx.TreeItemIcon_Expanded)
                         strFieldType = strSchema[strSchema.find("(") + 1: (len(strSchema) - strSchema[::-1].find(")") - 1)]
                         listTypes = strFieldType.split(",")
                         if not listTypes:
@@ -7712,6 +7776,8 @@ class SQLPreviewPage(wx.Panel):
                                 self.listCtrl.SetPyData(grandson, None)
                                 self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
                                 self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (typeTypes[0], ' '.join(typeTypes[1:]))), 2)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
                                 jnum += 1
                             # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
                         num += 1
@@ -7732,8 +7798,8 @@ class SQLPreviewPage(wx.Panel):
                     listOfViews = map(lambda lt : lt[0] , listOfTuple)
                     self.nodeRootViews = self.listCtrl.AppendItem(self.nodeRoot, "Views (%s)" % len(listOfViews))
                     self.listCtrl.SetPyData(self.nodeRootViews, None)
-                    self.listCtrl.SetItemImage(self.nodeRootViews, 24, which=wx.TreeItemIcon_Normal)
-                    self.listCtrl.SetItemImage(self.nodeRootViews, 13, which=wx.TreeItemIcon_Expanded)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, -1, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, -1, which=wx.TreeItemIcon_Expanded)
                     num = 0
                     for tupleView in listOfTuple:
                         child = self.listCtrl.AppendItem(self.nodeRootViews, tupleView[0])
@@ -7745,8 +7811,8 @@ class SQLPreviewPage(wx.Panel):
                         # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
                         strSchema = tupleView[1].replace('\n', " ")
                         self.listCtrl.SetItemText(child, strSchema, 2)
-                        self.listCtrl.SetItemImage(child, 24, which=wx.TreeItemIcon_Normal)
-                        self.listCtrl.SetItemImage(child, 13, which=wx.TreeItemIcon_Expanded)
+                        self.listCtrl.SetItemImage(child, self.imgView, which=wx.TreeItemIcon_Normal)
+                        self.listCtrl.SetItemImage(child, self.imgView, which=wx.TreeItemIcon_Expanded)
                         # type of view
                         self.curs.execute("PRAGMA table_info(%s);" % tupleView[0])
                         listTypesOfView = self.curs.fetchall()
@@ -7770,6 +7836,8 @@ class SQLPreviewPage(wx.Panel):
                                 self.listCtrl.SetPyData(grandson, None)
                                 self.listCtrl.SetItemText(grandson, itemOfTypes[2], 1)
                                 self.listCtrl.SetItemText(grandson, ("`%s`  %s " % (itemOfTypes[1], itemOfTypes[2])), 2)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
                                 jnum += 1
                             # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
                         num += 1
