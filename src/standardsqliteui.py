@@ -20,7 +20,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-29'
+__updated__ = '2018-08-30'
 
 
 
@@ -6603,7 +6603,7 @@ class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoW
         listmix.ListCtrlAutoWidthMixin.__init__(self)
         self.listSelectedItems = []
         
-    #Override
+    # Override
     def _doResize(self):
         """ Resize the last column as appropriate.
             This method was override to adapt mac ox os
@@ -6625,7 +6625,7 @@ class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoW
             return  # avoid an endless update bug when the height is small.
         
         numCols = self.GetColumnCount()
-        if numCols == 0: return # Nothing to resize.
+        if numCols == 0: return  # Nothing to resize.
 
         if(self._resizeColStyle == "LAST"):
             resizeCol = self.GetColumnCount()
@@ -6642,9 +6642,9 @@ class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoW
         # Windows it is not included
         listWidth = self.GetClientSize().width
 
-        totColWidth = 0 # Width of all columns except last one.
+        totColWidth = 0  # Width of all columns except last one.
         for col in range(numCols):
-            if col != (resizeCol-1):
+            if col != (resizeCol - 1):
                 totColWidth = totColWidth + self.GetColumnWidth(col)
 
         resizeColWidth = self.GetColumnWidth(resizeCol - 1)  # @UnusedVariable
@@ -6653,12 +6653,12 @@ class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoW
             # We haven't got the width to show the last column at its minimum
             # width -> set it to its minimum width and allow the horizontal
             # scrollbar to show.
-            self.SetColumnWidth(resizeCol-1, self._resizeColMinWidth)
+            self.SetColumnWidth(resizeCol - 1, self._resizeColMinWidth)
             return
 
         # Resize the last column to take up the remaining available space.
 
-        self.SetColumnWidth(resizeCol-1, listWidth - totColWidth)
+        self.SetColumnWidth(resizeCol - 1, listWidth - totColWidth)
         
     def GetAllSelectionIndex(self):
         for x in xrange(0, self.GetItemCount(), 1):
@@ -7554,11 +7554,11 @@ class SQLPreviewPage(wx.Panel):
         self.listCtrl.setResizeColumn(3)
         
         image_list = wx.ImageList(16, 16)
-        self.imgTable = image_list.Add(iconTable.GetImage().Scale(16,16).ConvertToBitmap())
-        self.imgView = image_list.Add(iconView.GetImage().Scale(16,16).ConvertToBitmap())
-        self.imgIndex = image_list.Add(iconIndex.GetImage().Scale(16,16).ConvertToBitmap())
-        self.imgTrigger = image_list.Add(iconTrigger.GetImage().Scale(16,16).ConvertToBitmap())
-        self.imgType    = image_list.Add(iconType.GetImage().Scale(16,16).ConvertToBitmap())
+        self.imgTable = image_list.Add(iconTable.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgView = image_list.Add(iconView.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgIndex = image_list.Add(iconIndex.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgTrigger = image_list.Add(iconTrigger.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgType = image_list.Add(iconType.GetImage().Scale(16, 16).ConvertToBitmap())
 
         self.listCtrl.AssignImageList(image_list)
         
@@ -7730,7 +7730,7 @@ class SQLPreviewPage(wx.Panel):
                 # pass params to view page
                 self.GrandParent.ViewTablePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
                 # pass params to execute page
-                self.GrandParent.ExecutePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePat)
+                self.GrandParent.ExecutePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
                 # TABLES 
                 self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='table';")
                 listOfTuple = self.curs.fetchall()
@@ -7847,7 +7847,8 @@ class SQLPreviewPage(wx.Panel):
                 
                 self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
-            except:
+            except Exception as e:  # @UnusedVariable
+                if DEBUG_STDOUT: print e
                 return False
         else:
             return False
@@ -8477,9 +8478,21 @@ class SQLExecuteSQLPage(wx.Panel):
         strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLineUTF8()
         if DEBUG_STDOUT: print strCurLine
         try:
+            # select distinct field_name from table
             self.curs.execute(strCurLine + ";")
+            # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
+            rtsSQLQuery = self.curs.fetchall()
+            # (('field_type', None, None, None, None, None, None),)
+            rtsQueryScheme = self.curs.description
+            
+            # 1. prepare col for result grid control
+            
+            # 2. prepare row for result grid control
+            
             return True
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as e:
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
             return False
 
 
@@ -8531,7 +8544,10 @@ class SQLNotebookTab(wx.Panel):
         # part 2, for sql results
         self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         # self.WinSQLResults.SetBackgroundColour("sky blue")
-        wx.StaticText(self.WinSQLResults, -1, "Panel Two", (5, 5))
+        self.MyResultGrid = SQLiteTableUIGridStandard(self.WinSQLResults, style=wx.LC_REPORT)
+        # self.MyGrid.SetBackgroundColour(wx.RED)
+        self.MyResultGrid.CreateGrid(0, 0)
+        self.MyResultGrid.SetRowLabelSize(0)
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
         
         # part 3, for sql executed info
@@ -8780,6 +8796,53 @@ class SQLNotebookTab(wx.Panel):
         else:
             end = pos
         return txt[start - linepos:end - linepos]
+    
+    
+    def InitListCtrlColumns(self, info_tables):
+        numberColumns = len(info_tables)
+        self.MyResultGrid.AppendCols(numberColumns)
+        self.MyResultGrid.SetRowLabelSize(0)
+        for index, info_column in enumerate(info_tables):
+            attr = wx.grid.GridCellAttr()
+            strLable = info_column[0]
+            strType = info_column[1]  # @UnusedVariable
+            colorBack, colorFor = self.GetColumnColor(strType)
+            self.MyResultGrid.SetColLabelValue(index, strLable)
+            attr.SetBackgroundColour(colorBack)
+            attr.SetTextColour(colorFor)
+            attr.SetReadOnly(True)
+            self.MyResultGrid.SetColAttr(index, attr)
+            self.MyResultGrid.SetColSize(index, 10)
+        # self.listCtrl.Arrange()
+    
+    def InitListCtrlColumnsValues(self, listRowsValues):
+        wait = wx.BusyCursor()
+        try:
+            iRow = 0
+            for listValues in listRowsValues:
+                self.MyResultGrid.AppendRows(1)
+                for iColumn, value in enumerate(map(str, listValues)):
+                    self.MyResultGrid.SetCellValue(iRow, iColumn, value)
+                iRow += 1
+        except:
+            pass
+        del wait
+    
+    def GetColumnColor(self, strType=""):
+        if "int" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['INT']
+        elif "char" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['TEXT']
+        elif "text" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['TEXT']
+        elif "blob" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['BLOB']
+        elif "float" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['REAL']
+        elif "real" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['REAL']
+        else:
+            return DEFAULT_COLUMNS_COLORS_INFO['DEFAULT']
 
 
 class NewPreviewPage(wx.Panel):
