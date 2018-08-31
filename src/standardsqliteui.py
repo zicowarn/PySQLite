@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# THIS IS PART OF Project 
 # standardsqliteui.py - The core part of the PPROJECT for manger the sqlite databae,
 # for export the sqlite table as sql file, or import a sql file into databse.
 # 
@@ -45,8 +44,7 @@ try:
 except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.flatnotebook as FNB  # @UnusedImport
 
-logger = logging.getLogger('#PySQLiteMGer64#')
-logger.setLevel(logging.INFO)
+
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -6180,7 +6178,11 @@ iconTableViewSave = PyEmbeddedImage(
     "5c8QbKajAaoQALVa7eTkZC21Xq/X7/dF5DP555ffKwQ7STflwcd/vEy+++E354SI+n8toDa7"
     "fJ5/s/tm4v+x/gWWI77j/9sMQwAAAABJRU5ErkJggg==")
 
-
+if DEBUG_STDOUT:
+    logging.basicConfig()
+    logger = logging.getLogger(' #PySQLiteMGer64# ')
+else:
+    logger = logging.getLogger(' #PySQLiteMGer64# ')
 
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
@@ -6311,7 +6313,6 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
         event.Skip()
     
     def OnCheckItem(self, index, flag):
-        # print(index, flag)
         self.ClearAllSelection()
         self.Focus(index)
         if flag:  # to check
@@ -6345,7 +6346,6 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
             self.Parent.cbWithBeginTransaction.Enable(True)
     
     def OnCheckItemFromMenuEvent(self, index, flag):
-        # print(index, flag)
         # self.ClearAllSelection()
         self.Focus(index)
         if flag:  # to check
@@ -6521,7 +6521,6 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
         event.Skip()
     
     def OnCheckItemFromMenuEvent(self, index, flag):
-        # print(index, flag)
         # self.ClearAllSelection()
         self.Focus(index)
         if flag:  # to check
@@ -6816,7 +6815,7 @@ class SQLMigratePage(wx.Panel):
                 # self.parent.SetStatusText("Start migrate from left to right")
                 message = GetTranslationText(1009, "Success: Migrate tables from left to right \n")
                 for strSourceTable in self.leftPanel.listCtrl.listSelectedItems:
-                    if DEBUG_STDOUT: print strSourceTable
+                    logger.info(strSourceTable)
                     msg = "\t\t %s\n" % strSourceTable
                     message += msg
                     self.MigrateSQLTable(strSourceTable, True)
@@ -6844,7 +6843,7 @@ class SQLMigratePage(wx.Panel):
                 # self.parent.SetStatusText("Start migrate from right to left")
                 message = GetTranslationText(1010, "Success: Migrate tables from right to left \n")
                 for strSourceTable in self.rightPanel.listCtrl.listSelectedItems:
-                    if DEBUG_STDOUT: print strSourceTable
+                    logger.info(strSourceTable)
                     msg = "\t\t %s\n" % strSourceTable
                     message += msg
                     self.MigrateSQLTable(strSourceTable, False)
@@ -6936,7 +6935,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            if DEBUG_STDOUT: print('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s\n' % event.GetString())
             if not self.isLeftFocused:
                 self.rightPart.SetBackgroundColour(wx.NullColour)
                 self.rightPart.Refresh()
@@ -6985,7 +6984,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            if DEBUG_STDOUT: print('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s\n' % event.GetString())
             if not self.isRightFocused:
                 self.leftPart.SetBackgroundColour(wx.NullColour)
                 self.leftPart.Refresh()
@@ -7032,26 +7031,25 @@ class SQLMigratePage(wx.Panel):
 
     def GetTableTypeByTableName(self, strTable=""):
         if strTable.isupper():
-            if DEBUG_STDOUT: print "TEMPLATE    " + strTable
+            logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
             return "UNKNOWN"
 
     def OnSashChanged(self, event):
-        if DEBUG_STDOUT: print "sash changed to %s\n" % str(event.GetSashPosition())
+        logger.info("sash changed to %s\n" % str(event.GetSashPosition()))
 
     def OnSashChanging(self, event):
-        if DEBUG_STDOUT: print "sash changing to %s\n" % str(event.GetSashPosition())
+        logger.info("sash changing to %s\n" % str(event.GetSashPosition()))
     
     def OnLeftPartClicked(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT: print "on left part, left mouse up...."
+        logger.info("on left part, left mouse up....")
         self.rightPart.SetBackgroundColour(wx.NullColour)
         self.rightPart.Refresh()
         self.leftPart.SetBackgroundColour("#FFFF00")
         self.leftPart.Refresh()
         
     def OnRightPartClicked(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT: print "on right part, left mouse up...."
         self.leftPart.SetBackgroundColour(wx.NullColour)
         self.leftPart.Refresh()
         self.rightPart.SetBackgroundColour("#FFFF00")
@@ -7060,7 +7058,7 @@ class SQLMigratePage(wx.Panel):
     def OnLeftGotFocus(self, event):
         self.isLeftFocused = True
         self.isRightFocused = False
-        if DEBUG_STDOUT: print "on left part, left part focused...."
+        logger.info("on left part, left part focused....")
         self.rightPart.SetBackgroundColour(wx.NullColour)
         self.rightPart.Refresh()
         self.leftPart.SetBackgroundColour("#FFFF00")
@@ -7070,7 +7068,7 @@ class SQLMigratePage(wx.Panel):
     def OnRightGotFocus(self, event):
         self.isRightFocused = True
         self.isLeftFocused = False
-        if DEBUG_STDOUT: print "on right part, right part focused...."
+        logger.info("on right part, right part focused....")
         self.leftPart.SetBackgroundColour(wx.NullColour)
         self.leftPart.Refresh()
         self.rightPart.SetBackgroundColour("#FFFF00")
@@ -7155,6 +7153,8 @@ class SQLExportPage(wx.Panel):
         
         self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesExpert, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        
         self.strSQLitePath = ""
         self.conn = None
         self.curs = None
@@ -7244,14 +7244,13 @@ class SQLExportPage(wx.Panel):
         # This is done by getting the path data from the dialog - BEFORE
         # we destroy it. 
         if dlg.ShowModal() == wx.ID_OK:
-            if DEBUG_STDOUT: print 'You selected: %s\n' % dlg.GetPath()
+            logger.info('You selected: %s\n' % dlg.GetPath())
             for strTable in self.listCtrl.listSelectedItems:
-                if DEBUG_STDOUT: print strTable
                 strFullPath = dlg.GetPath() + "\%s.sql" % strTable
                 with open(strFullPath, "w+b") as f:
                     for stRecord in self.ExportAsSQL(strExpertTable=strTable, isCreateCommand=self.cbWithCreateCommand.GetValue(),
                                                      isTransaction=self.cbWithBeginTransaction.GetValue()):
-                        if DEBUG_STDOUT: print stRecord
+                        logger.info(stRecord)
                         f.write("%s\n" % stRecord)
                     f.close()
             if event:
@@ -7261,7 +7260,6 @@ class SQLExportPage(wx.Panel):
     
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            if DEBUG_STDOUT: print('DirBrowseButton: %s\n' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
@@ -7284,7 +7282,7 @@ class SQLExportPage(wx.Panel):
         
     def GetTableTypeByTableName(self, strTable=""):
         if strTable.isupper():
-            if DEBUG_STDOUT: print "TEMPLATE    " + strTable
+            logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
             return "UNKNOWN"
@@ -7301,6 +7299,7 @@ class SQLImportPage(wx.Panel):
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
             fileMask="sqlite (*.SQLite)|*.sqlite",
             changeCallback=self.OnOpenDatabaseCallBacked)
+        
         
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
@@ -7324,13 +7323,19 @@ class SQLImportPage(wx.Panel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
 
+        
         # sizerH = wx.BoxSizer(wx.HORIZONTAL)
         # sizerH.Add(self.cbWithCreateCommand, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         # sizerH.Add(self.cbWithBeginTransaction, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         
         # self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesImport, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        
+        
         self.listCtrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK , self.OnContextMenu)
         self.btnSelectedTablesImport.Bind(wx.EVT_BUTTON, self.OnButtonImportTablesClicked)
         
@@ -7462,13 +7467,13 @@ class SQLImportPage(wx.Panel):
         # This is done by getting the path data from the dialog - BEFORE
         # we destroy it. 
         if dlg.ShowModal() == wx.ID_OK:
-            if DEBUG_STDOUT: print 'You selected: %s\n' % dlg.GetDirectory()
+            logger.info('You selected: %s\n' % dlg.GetDirectory())
             self.ltFailedImportTables = []
             self.ltSuccessImportTables = []
             for strTableName in dlg.GetFilenames():
-                if DEBUG_STDOUT: print strTableName
+                logger.info(strTableName)
                 strFullPath = dlg.GetDirectory() + "\\" + strTableName
-                if DEBUG_STDOUT: print strFullPath
+                logger.info(strFullPath)
                 if not self.ImportWithSQL(strFullPath):
                     self.ltFailedImportTables.append(strTableName)
                 else:
@@ -7497,7 +7502,7 @@ class SQLImportPage(wx.Panel):
     
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            if DEBUG_STDOUT: print('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s\n' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
@@ -7527,7 +7532,7 @@ class SQLImportPage(wx.Panel):
         
     def GetTableTypeByTableName(self, strTable=""):
         if strTable.isupper():
-            if DEBUG_STDOUT: print "TEMPLATE    " + strTable
+            logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
             return "UNKNOWN"
@@ -7630,7 +7635,7 @@ class SQLPreviewPage(wx.Panel):
             dlg = wx.MessageDialog(self, message, GetTranslationText(1013, "Info"), wx.OK | wx.CANCEL | wx.ICON_INFORMATION)
 
             if dlg.ShowModal() == wx.ID_OK:
-                if DEBUG_STDOUT: print 'You delete: %s\n' % dropSQliteTable
+                logger.info('You delete: %s\n' % dropSQliteTable)
                 if dropSQliteTable != "":
                     # delete sqlite table on list ctrl
                     if self.DropSQLTable(strDropTable=dropSQliteTable):
@@ -7664,7 +7669,7 @@ class SQLPreviewPage(wx.Panel):
             dlg.GetChildren()[1].SelectAll()
 
             if dlg.ShowModal() == wx.ID_OK:
-                if DEBUG_STDOUT: print 'You entered: %s\n' % dlg.GetValue()
+                logger.info('You entered: %s\n' % dlg.GetValue())
                 newSqltableName = dlg.GetValue()
                 if newSqltableName.lower() != oldSqltableName.lower():
                     # reset sqlite table on list ctrl
@@ -7724,7 +7729,7 @@ class SQLPreviewPage(wx.Panel):
 
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            if DEBUG_STDOUT: print('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s\n' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
@@ -7959,7 +7964,7 @@ class SQLPreviewPage(wx.Panel):
         
     def GetTableTypeByTableName(self, strTable=""):
         if strTable.isupper():
-            if DEBUG_STDOUT: print "TEMPLATE    " + strTable
+            logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
             return "UNKNOWN"
@@ -8146,6 +8151,7 @@ class SQLViewTablePage(wx.Panel):
         dlg.Destroy()
         event.Skip()
         
+              
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -8309,7 +8315,6 @@ class SQLViewTablePage(wx.Panel):
         q += ",".join(["'||quote(" + col + ")||'" for col in column_names])
         q += ")' FROM '%(tbl_name)s' WHERE rowid IN (%(start_index)d, %(end_index)d)"
         sqlstring = q % {'tbl_name': self.sqltable, 'start_index': start_index, 'end_index' : (start_index + count_sum)}
-        if DEBUG_STDOUT: print sqlstring
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
@@ -8599,7 +8604,7 @@ class SQLNotebookTab(wx.Panel):
                 event.Skip()
         
     def OnMSPChanged(self, event):
-        if DEBUG_STDOUT: print "Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()),
+        logger.info("Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()))
     
     def OnSTCDestroy(self, event):
         # This is how the clipboard contents can be preserved after
@@ -8608,8 +8613,8 @@ class SQLNotebookTab(wx.Panel):
         event.Skip()
 
     def OnSTCStartDrag(self, event):
-        if DEBUG_STDOUT: print "OnStartDrag: %d, %s" \
-                       % (event.GetDragAllowMove(), event.GetDragText())
+        logger.info("OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
+            % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult()))
 
         if event.GetPosition() < 250:
             event.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
@@ -8624,10 +8629,10 @@ class SQLNotebookTab(wx.Panel):
             event.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
 
     def OnSTCDoDrop(self, event):
-        if DEBUG_STDOUT: print "OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
+        logger.info("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
                        "\ttext: %s" \
                        % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult(),
-                          event.GetDragText())
+                          event.GetDragText()))
 
         if event.GetPosition() < 500:
             event.SetDragText("DROPPED TEXT")  # Can change text if needed
@@ -8679,7 +8684,7 @@ class SQLNotebookTab(wx.Panel):
             event.Skip()
     
     def OnSTCModified(self, event):
-        if DEBUG_STDOUT: print """OnModified \
+        logger.info("""OnModified \
         Mod type:     %s \
         At position:  %d \
         Lines added:  %d \
@@ -8688,7 +8693,7 @@ class SQLNotebookTab(wx.Panel):
                                   event.GetPosition(),
                                   event.GetLinesAdded(),
                                   event.GetLength(),
-                                  repr(event.GetText()))
+                                  repr(event.GetText())))
         
     def OnSTCCut(self):
         "Override default Cut to track lines using an internal clipboard"
@@ -8940,6 +8945,7 @@ class NewPreviewPage(wx.Panel):
         dlg.Destroy()
         event.Skip()
                      
+              
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -8961,6 +8967,7 @@ class NewPreviewPage(wx.Panel):
         wx.TheClipboard.Close()
         event.Skip()
                
+        
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
         iNumberOfCols = self.MyGrid.GetNumberCols()
@@ -9044,6 +9051,7 @@ class NewPreviewPage(wx.Panel):
             self.MyGrid.SetColSize(index, 10)
         # self.listCtrl.Arrange()
         
+    
     def InitListCtrlColumnsValues(self):
         wait = wx.BusyCursor()
         try:
@@ -9102,11 +9110,12 @@ class NewPreviewPage(wx.Panel):
         q += ",".join(["'||quote(" + col + ")||'" for col in column_names])
         q += ")' FROM '%(tbl_name)s' WHERE rowid IN (%(start_index)d, %(end_index)d)"
         sqlstring = q % {'tbl_name': self.sqltable, 'start_index': start_index, 'end_index' : (start_index + count_sum)}
-        if DEBUG_STDOUT: print sqlstring
+        logger.info("Query Results: " + sqlstring)
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
                 
+    
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
         # Build the insert statement for each row of the current table
@@ -9349,37 +9358,37 @@ class MainFrame(wx.Frame):
         self.Close()
 
     def Menu300(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Preview Menu Clicked \n'
+        logger.info('Preview Menu Clicked')
         self.nb.SetSelection(0)
 
     def Menu301(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Import Menu Clicked\n'
+        logger.info('Import Menu Clicked')
         self.nb.SetSelection(3)
 
     def Menu302(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Export Menu Clicked'
+        logger.info('Export Menu Clicked')
         self.nb.SetSelection(4)
 
     def Menu303(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Migrate Menu Clicked'
+        logger.info('Executed Menu Clicked')
         self.nb.SetSelection(5)
     
     def Menu304(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Data View Menu Clicked'
+        logger.info('View Menu Clicked')
         self.nb.SetSelection(1)
         
     def Menu305(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Execute SQL Menu Clicked'
+        logger.info('Execute SQL Menu Clicked')
         self.nb.SetSelection(2)
             
     def Menu401(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Migrate Menu Clicked'
+        logger.info('About info Menu Clicked')
         dlg = AboutInfoDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
     
     def Menu402(self, event):  # @UnusedVariable
-        if DEBUG_STDOUT : 'Migrate Menu Clicked'
+        logger.info('Help info Menu Clicked')
         dlg = AboutHelpDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
@@ -9470,18 +9479,24 @@ def main():
     app = MyApp()
     strTempPath = tempfile.gettempdir()
     tStart = datetime.now() 
-    hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr)
-    # logger.info("* Currently Interpreter Path: %s" % str(sys.executable))
-    sys.stderr = hdlr
-    sys.stdout = hdlr
-    frame = MainFrame(None) 
-    frame.Show() 
-    app.MainLoop() 
+    if not DEBUG_STDOUT:
+        logger.setLevel(logging.INFO)
+        hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        logger.addHandler(hdlr)
+        sys.stderr = hdlr
+        sys.stdout = hdlr
+    else:
+        logger.setLevel(logging.DEBUG)
 
-
+    logger.info("* Currently Interpreter Path: %s" % str(sys.executable))
+    try:
+        frame = MainFrame(None) 
+        frame.Show() 
+        app.MainLoop() 
+    except Exception as e:
+        logger.info("* Error by starting %s" % str(e.message))
 
 if __name__ == '__main__':
     main()
