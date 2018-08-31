@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# THIS FILE IS PART OF OPTICAM Project 
+# THIS IS PART OF Project 
 # standardsqliteui.py - The core part of the PPROJECT for manger the sqlite databae,
 # for export the sqlite table as sql file, or import a sql file into databse.
 # 
@@ -20,10 +20,13 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-30'
+__updated__ = '2018-08-31'
 
-
-
+import sqlite3
+import os, sys
+import logging
+import tempfile
+from datetime import datetime
 import wx  # @UnusedImport
 import wx.lib.agw.aui as aui
 import  wx.stc  as  stc
@@ -42,9 +45,8 @@ try:
 except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.flatnotebook as FNB  # @UnusedImport
 
-import sqlite3
-import os, sys
-
+logger = logging.getLogger('#PySQLiteMGer64#')
+logger.setLevel(logging.INFO)
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -9445,11 +9447,41 @@ def GetTranslationText(idMsg=None, default=""):
         return default
 
 
+class MyApp(wx.App): 
+
+    def __init__(self, redirect=True, filename=None): 
+        wx.App.__init__(self, redirect, filename) 
+
+    def OnInit(self):
+        return True 
+
+    def OnExit(self):
+        pass
+
 def main():
-    
-    ex = wx.App()
-    MainFrame(None)
-    ex.MainLoop()    
+    global DEFAULT_LANGUAGE
+    for arg in sys.argv:
+        if "-c" in arg:
+            strLandSetting = arg.replace("-c", "")
+            if strLandSetting in DEFAULT_TRANSLATION_DICT.keys():
+                DEFAULT_LANGUAGE = strLandSetting
+            else:
+                pass
+    app = MyApp()
+    strTempPath = tempfile.gettempdir()
+    tStart = datetime.now() 
+    hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    # logger.info("* Currently Interpreter Path: %s" % str(sys.executable))
+    sys.stderr = hdlr
+    sys.stdout = hdlr
+    frame = MainFrame(None) 
+    frame.Show() 
+    app.MainLoop() 
+
+
 
 if __name__ == '__main__':
     main()
