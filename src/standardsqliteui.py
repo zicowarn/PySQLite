@@ -43,9 +43,7 @@ try:
 except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.flatnotebook as FNB  # @UnusedImport
 
-logging.basicConfig()
-logger = logging.getLogger(' #PySQLiteMGer64# ')
-logger.setLevel(logging.DEBUG)
+
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -85,7 +83,7 @@ else:
     pb = 10
 
 
-DEBUG_STDOUT = True
+DEBUG_STDOUT = False
 DEFAULT_LANGUAGE = "049"
 DEFAULT_COLOUR_BACK = (-1, -1, -1, 255)
 DEFAULT_COLOUR_TEXT = (0, 0, 0, 255)
@@ -6043,7 +6041,11 @@ iconTableViewSave = PyEmbeddedImage(
     "5c8QbKajAaoQALVa7eTkZC21Xq/X7/dF5DP555ffKwQ7STflwcd/vEy+++E354SI+n8toDa7"
     "fJ5/s/tm4v+x/gWWI77j/9sMQwAAAABJRU5ErkJggg==")
 
-
+if DEBUG_STDOUT:
+    logging.basicConfig()
+    logger = logging.getLogger(' #PySQLiteMGer64# ')
+else:
+    logger = logging.getLogger(' #PySQLiteMGer64# ')
 
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
@@ -8840,6 +8842,7 @@ def main():
     strTempPath = tempfile.gettempdir()
     tStart = datetime.now()
     if not DEBUG_STDOUT:
+        logger.setLevel(logging.INFO)
         hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         hdlr.setFormatter(formatter)
@@ -8847,18 +8850,15 @@ def main():
         sys.stderr = hdlr
         sys.stdout = hdlr
     else:
-        pass
-#         consoleHandler = logging.StreamHandler()
-#         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-#         consoleHandler.setFormatter(formatter)
-#         logger.addHandler(consoleHandler)
-#         sys.stderr = consoleHandler
-#         sys.stdout = consoleHandler
-    
+        logger.setLevel(logging.DEBUG)
+
     logger.info("* Currently Interpreter Path: %s" % str(sys.executable))
-    frame = MainFrame(None) 
-    frame.Show() 
-    app.MainLoop() 
+    try:
+        frame = MainFrame(None) 
+        frame.Show() 
+        app.MainLoop()
+    except Exception as e:
+        logger.info("* Error by starting %s" % str(e.message))
 
 if __name__ == '__main__':
     main()
