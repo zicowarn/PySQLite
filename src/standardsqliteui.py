@@ -8647,8 +8647,6 @@ class MainFrame(wx.Frame):
                                     GetTranslationText(1030, "Preview a table infos of SQLite"))
         self.menu2.AppendCheckItem(204, GetTranslationText(1055, "&Data View"),
                                    GetTranslationText(1056, "View a table of SQLite"))
-        self.menu2.AppendCheckItem(205, GetTranslationText(1065, "&Execute SQL"),
-                                   GetTranslationText(1066, "Execute SQL command line"))
         self.menu2.AppendCheckItem(201, GetTranslationText(1031, "&Import"),
                                    GetTranslationText(1032, "Import a table into SQLite"))
         self.menu2.AppendCheckItem(202, GetTranslationText(1033, "&Export"),
@@ -8675,8 +8673,6 @@ class MainFrame(wx.Frame):
         self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"))
         self.ViewTablePage = SQLViewTablePage(self.nb)
         self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
-        self.ExecutePage = SQLExecuteSQLPage(self.nb)
-        self.nb.AddPage(self.ExecutePage, GetTranslationText(1065, "Execute SQL"))
         self.ImportPage = SQLImportPage(self.nb)
         self.nb.AddPage(self.ImportPage, GetTranslationText(1031, "Import"))
         self.ExportPage = SQLExportPage(self.nb)
@@ -8698,6 +8694,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Menu201, id=201)
         self.Bind(wx.EVT_MENU, self.Menu202, id=202)
         self.Bind(wx.EVT_MENU, self.Menu203, id=203)
+        self.Bind(wx.EVT_MENU, self.Menu204, id=204)
         self.Bind(wx.EVT_MENU, self.Menu301, id=301)
         self.Bind(wx.EVT_MENU, self.Menu302, id=302)
 
@@ -8731,15 +8728,19 @@ class MainFrame(wx.Frame):
 
     def Menu201(self, event):  # @UnusedVariable
         logger.info('Import Menu Clicked')
-        self.nb.SetSelection(1)
+        self.nb.SetSelection(2)
 
     def Menu202(self, event):  # @UnusedVariable
         logger.info('Export Menu Clicked')
-        self.nb.SetSelection(2)
+        self.nb.SetSelection(3)
 
     def Menu203(self, event):  # @UnusedVariable
         logger.info('Executed Menu Clicked')
-        self.nb.SetSelection(3)
+        self.nb.SetSelection(4)
+        
+    def Menu204(self, event):  # @UnusedVariable
+        logger.info('View Menu Clicked')
+        self.nb.SetSelection(1)
             
     def Menu301(self, event):  # @UnusedVariable
         logger.info('About info Menu Clicked')
@@ -8761,7 +8762,7 @@ class MainFrame(wx.Frame):
     
     def OnTabChanged(self, event):
         tabIndex = event.GetSelection()
-        if tabIndex <= 5:
+        if tabIndex <= 4:
             tabText = event.GetEventObject().GetPageText(tabIndex)
             strVorlage = GetTranslationText(1041, "This is %s page") 
             self.SetStatusText(strVorlage % tabText)
@@ -8787,7 +8788,7 @@ class MainFrame(wx.Frame):
     
     def OnMenuEditOpen(self, event):
         if event.GetMenu().GetMenuItems()[0].GetId() == 200:
-            lt = [False] * 6
+            lt = [False] * 5
             index = self.nb.GetSelection()
             if index > 5:
                 self.menu2.FindItemByPosition(0).Check(lt[0])
@@ -8795,15 +8796,13 @@ class MainFrame(wx.Frame):
                 self.menu2.FindItemByPosition(2).Check(lt[2])
                 self.menu2.FindItemByPosition(3).Check(lt[3])
                 self.menu2.FindItemByPosition(4).Check(lt[4])
-                self.menu2.FindItemByPosition(5).Check(lt[5])
             else:
                 lt[index] = True
                 self.menu2.FindItemByPosition(0).Check(lt[0])
                 self.menu2.FindItemByPosition(1).Check(lt[1])
                 self.menu2.FindItemByPosition(2).Check(lt[2])
                 self.menu2.FindItemByPosition(3).Check(lt[3])
-                self.menu2.FindItemByPosition(4).Check(lt[4])
-                self.menu2.FindItemByPosition(5).Check(lt[5])
+                self.menu2.FindItemByPosition(3).Check(lt[4])
         else:
             pass
 
