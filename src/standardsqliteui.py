@@ -8470,7 +8470,7 @@ class SQLExecuteSQLPage(wx.Panel):
         pageSelected = self.MySQLNotebook.GetPage(iSelected)
         strAllText = pageSelected.STCSQLCommands.GetTextUTF8()
         sqlScript = strAllText.replace("\n", ";\n")
-        if DEBUG_STDOUT: print sqlScript
+        logger.info(sqlScript)
         try:
             self.curs.executescript(sqlScript)
             return True
@@ -8482,6 +8482,7 @@ class SQLExecuteSQLPage(wx.Panel):
     def OnImgBtnStepSQLClicked(self, event):  # @UnusedVariable
         iSelected = self.MySQLNotebook.GetSelection()
         pageSelected = self.MySQLNotebook.GetPage(iSelected)
+        pageSelected.TCSQLExecutedInfo.Clear()
         strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLine()
         logger.info("Get input message: " + strCurLine)
         try:
@@ -8492,14 +8493,21 @@ class SQLExecuteSQLPage(wx.Panel):
             # (('field_type', None, None, None, None, None, None),)
             rtsQueryScheme = self.curs.description
             # 1. prepare col for result grid control
-            
+            info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
+            pageSelected.InitListCtrlColumns(info_tables)
             # 2. prepare row for result grid control
-            
+            listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
+            pageSelected.InitListCtrlColumnsValues(listRowsValues)
             return True
         except sqlite3.OperationalError as e:
             pageSelected.TCSQLExecutedInfo.Clear()
             pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
             return False
+        except Exception as e:
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
+            return False
+            
 
 
 class SQLNotebookTab(wx.Panel):
@@ -8536,7 +8544,7 @@ class SQLNotebookTab(wx.Panel):
         self.STCSQLCommands.StyleClearAll()  # Reset all to be like the default
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 2, face1))
-        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 2))
         # bind events
         self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
         self.STCSQLCommands.Bind(stc.EVT_STC_DRAG_OVER, self.OnSTCDragOver)
@@ -8551,12 +8559,17 @@ class SQLNotebookTab(wx.Panel):
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLCommands, 125)
         
         # part 2, for sql results
+        self.vSizerWinSQLResults = wx.BoxSizer(wx.VERTICAL)
+        self.hSizerWinSQLResults = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         # self.WinSQLResults.SetBackgroundColour("sky blue")
         self.MyResultGrid = SQLiteTableUIGridStandard(self.WinSQLResults, style=wx.LC_REPORT)
         # self.MyGrid.SetBackgroundColour(wx.RED)
         self.MyResultGrid.CreateGrid(0, 0)
         self.MyResultGrid.SetRowLabelSize(0)
+        self.hSizerWinSQLResults.Add(self.MyResultGrid, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.vSizerWinSQLResults.Add(self.hSizerWinSQLResults, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.WinSQLResults.SetSizerAndFit(self.vSizerWinSQLResults)
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
         
         # part 3, for sql executed info
@@ -8808,21 +8821,30 @@ class SQLNotebookTab(wx.Panel):
     
     
     def InitListCtrlColumns(self, info_tables):
+        # 1. clear the grid / reset the grid
+        self.MyResultGrid.ClearGrid()
+        # 2. delete all rows
+        if self.MyResultGrid.GetNumberRows() > 0:
+            self.MyResultGrid.DeleteRows(0, self.MyResultGrid.GetNumberRows())
+        # 3. delete all columns
+        if self.MyResultGrid.GetNumberCols() > 0:
+            self.MyResultGrid.DeleteCols(0, self.MyResultGrid.GetNumberCols())
         numberColumns = len(info_tables)
         self.MyResultGrid.AppendCols(numberColumns)
-        self.MyResultGrid.SetRowLabelSize(0)
+        self.MyResultGrid.SetRowLabelSize(40)
         for index, info_column in enumerate(info_tables):
             attr = wx.grid.GridCellAttr()
             strLable = info_column[0]
             strType = info_column[1]  # @UnusedVariable
-            colorBack, colorFor = self.GetColumnColor(strType)
+            if strType:
+                colorBack, colorFor = self.GetColumnColor(strType)
+                attr.SetBackgroundColour(colorBack)
+                attr.SetTextColour(colorFor)
             self.MyResultGrid.SetColLabelValue(index, strLable)
-            attr.SetBackgroundColour(colorBack)
-            attr.SetTextColour(colorFor)
             attr.SetReadOnly(True)
             self.MyResultGrid.SetColAttr(index, attr)
-            self.MyResultGrid.SetColSize(index, 10)
-        # self.listCtrl.Arrange()
+            self.MyResultGrid.SetColSize(index, 200)
+        #self.MyResultGrid.Arrange()
     
     def InitListCtrlColumnsValues(self, listRowsValues):
         wait = wx.BusyCursor()
@@ -9052,7 +9074,6 @@ class NewPreviewPage(wx.Panel):
             self.MyGrid.SetColAttr(index, attr)
             self.MyGrid.SetColSize(index, 10)
         # self.listCtrl.Arrange()
-        
     
     def InitListCtrlColumnsValues(self):
         wait = wx.BusyCursor()
