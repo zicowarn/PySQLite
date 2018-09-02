@@ -8545,6 +8545,7 @@ class SQLNotebookTab(wx.Panel):
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 2, face1))
         self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 2))
+        self.STCSQLCommands.StyleSetCase(stc.STC_SQL_WORD, stc.STC_CASE_UPPER)
         # bind events
         self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
         self.STCSQLCommands.Bind(stc.EVT_STC_DRAG_OVER, self.OnSTCDragOver)
