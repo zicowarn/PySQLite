@@ -19,7 +19,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-31'
+__updated__ = '2018-09-02'
 
 import sqlite3
 import os, sys
@@ -8482,8 +8482,8 @@ class SQLExecuteSQLPage(wx.Panel):
     def OnImgBtnStepSQLClicked(self, event):  # @UnusedVariable
         iSelected = self.MySQLNotebook.GetSelection()
         pageSelected = self.MySQLNotebook.GetPage(iSelected)
-        strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLineUTF8()
-        if DEBUG_STDOUT: print strCurLine
+        strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLine()
+        logger.info("Get input message: " + strCurLine)
         try:
             # select distinct field_name from table
             self.curs.execute(strCurLine + ";")
@@ -8491,7 +8491,6 @@ class SQLExecuteSQLPage(wx.Panel):
             rtsSQLQuery = self.curs.fetchall()
             # (('field_type', None, None, None, None, None, None),)
             rtsQueryScheme = self.curs.description
-            
             # 1. prepare col for result grid control
             
             # 2. prepare row for result grid control
@@ -8523,7 +8522,10 @@ class SQLNotebookTab(wx.Panel):
         self.WinSQLCommands = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         self.WinSQLCommands.SetBackgroundColour("red")
         self.STCSQLCommands = stc.StyledTextCtrl(self.WinSQLCommands, wx.ID_ANY)
+        self.STCSQLCommands.metadata = None        # dict of uuid, origin for line tracking
+        self.STCSQLCommands.clipboard = None       # lines text and metadata for cut/paste
         self.STCSQLCommands.EmptyUndoBuffer()
+        #self.STCSQLCommands.clipboard = wx.TheClipboard()
         # set keywords list
         self.STCSQLCommands.SetLexer(stc.STC_LEX_SQL) 
         self.STCSQLCommands.SetKeyWords(0, " ".join(DEFAULT_SQLITE_KEY_WORDS_LIST))
@@ -8561,7 +8563,7 @@ class SQLNotebookTab(wx.Panel):
         self.hSizerSQLExecutedInfo = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLExecutedInfo = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         # self.WinSQLExecutedInfo.SetBackgroundColour("green")
-        self.TCSQLExecutedInfo = wx.TextCtrl(self.WinSQLExecutedInfo, -1, "Panel Three", (5, 5))
+        self.TCSQLExecutedInfo = wx.TextCtrl(self.WinSQLExecutedInfo, -1, "", (5, 5))
         # self.TCSQLExecutedInfo.SetBackgroundColour("red")
         self.hSizerSQLExecutedInfo.Add(self.TCSQLExecutedInfo, proportion=1, flag=wx.EXPAND | wx.ALL, border=0)
         img = iconTableViewSave.GetImage()
@@ -8583,7 +8585,7 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
     def OnMSPChanging(self, event):
-        if DEBUG_STDOUT: print "Changing sash:%d  %s\n" % (event.GetSashIdx(), event.GetSashPosition()),
+        logger.info("Changing sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()))
         iSashPosition = event.GetSashPosition()
         sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
         if event.GetSashIdx() == 1:
@@ -8714,20 +8716,20 @@ class SQLNotebookTab(wx.Panel):
     def OnSTCPaste(self):
         "Override default Paste to track lines using an internal clipboard"
         start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
-        ret = stc.StyledTextCtrl.Paste(self)
+        ret = stc.StyledTextCtrl.Paste(self.STCSQLCommands)
         # only restore uuids if text is the same (not copied from other app):
-        if self.clipboard:
+        if self.STCSQLCommands.clipboard:
             original_text_lines, metadata_saved = self.STCSQLCommands.clipboard
             end = start + len(metadata_saved)
             new_text_lines = [self.STCSQLCommands.GetLineText(i + 1) for i in range(start, end)]
             if metadata_saved and original_text_lines == new_text_lines:
                 # #if DEBUG_STDOUT: print "restoring", start, metadata_saved
-                self.metadata[start:end] = metadata_saved
-                self.clipboard = None
+                self.STCSQLCommands.metadata[start:end] = metadata_saved
+                self.STCSQLCommands.STCSQLCommands.clipboard = None
         return ret
         
     def OnSTCUndo(self):
-        if DEBUG_STDOUT: print "UNDO!"
+        logger.info("UNDO!")
         
     def TransModTypeOfSTC(self, modType):
         st = ""
