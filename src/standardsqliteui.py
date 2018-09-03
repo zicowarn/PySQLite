@@ -8566,6 +8566,8 @@ class SQLNotebookTab(wx.Panel):
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 1, face1))
         self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 1))
         self.STCSQLCommands.StyleSetCase(stc.STC_SQL_WORD, stc.STC_CASE_UPPER)
+        self.STCSQLCommands.MarkerDefine(0, stc.STC_MARK_SHORTARROW, "#00FF00", "#00FF00")
+        self.STCSQLCommands.MarkerAdd(0, 0)
         # bind events
         self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
         self.STCSQLCommands.Bind(stc.EVT_STC_DRAG_OVER, self.OnSTCDragOver)
@@ -8573,6 +8575,8 @@ class SQLNotebookTab(wx.Panel):
         self.STCSQLCommands.Bind(stc.EVT_STC_MODIFIED, self.OnSTCModified)
         self.STCSQLCommands.Bind(wx.EVT_WINDOW_DESTROY, self.OnSTCDestroy)
         self.STCSQLCommands.Bind(wx.EVT_KEY_DOWN, self.OnSTCKeyDown)
+        self.STCSQLCommands.Bind(wx.EVT_KEY_UP, self.OnSTCKeyUp)
+        self.STCSQLCommands.Bind(wx.EVT_LEFT_UP, self.OnSTCMouseUp)
         self.STCSQLCommands.Bind(wx.EVT_CHAR, self.OnSTCChar)
         self.hSizerWinSQLCommands.Add(self.STCSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
         self.vSizerWinSQLCommands.Add(self.hSizerWinSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
@@ -8694,6 +8698,24 @@ class SQLNotebookTab(wx.Panel):
         elif key == ord('V') and control and not alt:
             self.OnSTCPaste()
         else:
+            event.Skip()
+    
+    def OnSTCKeyUp(self, event):
+        iLineNr = event.GetEventObject().GetCurrentLine()
+        if event.GetEventObject().MarkerGet(iLineNr):
+            event.Skip()
+        else:
+            event.GetEventObject().MarkerDeleteAll(0)
+            event.GetEventObject().MarkerAdd(iLineNr, 0)
+            event.Skip()
+    
+    def OnSTCMouseUp(self, event):
+        iLineNr = event.GetEventObject().GetCurrentLine()
+        if event.GetEventObject().MarkerGet(iLineNr):
+            event.Skip()
+        else:
+            event.GetEventObject().MarkerDeleteAll(0)
+            event.GetEventObject().MarkerAdd(iLineNr, 0)
             event.Skip()
     
     def OnSTCChar(self, event):
