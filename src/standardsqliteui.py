@@ -19,12 +19,13 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-02'
+__updated__ = '2018-09-03'
 
 import sqlite3
 import os, sys
 import logging
 import tempfile
+import time
 from datetime import datetime
 import wx  # @UnusedImport
 import wx.lib.agw.aui as aui
@@ -54,16 +55,16 @@ if wx.Platform == '__WXMSW__':
               'size' : 10,
               'size2': 8,
              }
-    face1 = 'Arial'
-    face2 = 'Times New Roman'
-    face3 = 'Courier New'
-    pb = 12
+    face1 = 'Helvetica'
+    face2 = 'Times'
+    face3 = 'Courier'
+    pb = 9
 elif wx.Platform == '__WXMAC__':
     faces = { 'times': 'Times New Roman',
               'mono' : 'Monaco',
               'helv' : 'Arial',
               'other': 'Comic Sans MS',
-              'size' : 12,
+              'size' : 10,
               'size2': 10,
              }
     face1 = 'Helvetica'
@@ -75,7 +76,7 @@ else:
               'mono' : 'Courier',
               'helv' : 'Helvetica',
               'other': 'new century schoolbook',
-              'size' : 12,
+              'size' : 10,
               'size2': 10,
              }
     face1 = 'Helvetica'
@@ -113,6 +114,8 @@ DEFAULT_SQLITE_KEY_WORDS_LIST = ['abort', 'action', 'add', 'after', 'all',
                                  'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger',
                                  'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual',
                                  'when', 'where', 'with', 'without' ]
+
+DEFAULT_AUTOCOMPLETE_WORDS_LIST = []
 
 DEFAULT_TRANSLATION_DICT = {
                             "049" : {
@@ -7732,6 +7735,8 @@ class SQLPreviewPage(wx.Panel):
             logger.info('DirBrowseButton: %s\n' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
+                global DEFAULT_AUTOCOMPLETE_WORDS_LIST
+                DEFAULT_AUTOCOMPLETE_WORDS_LIST = []
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
                 self.curs = self.conn.cursor()
                 # pass params to view page
@@ -7754,6 +7759,7 @@ class SQLPreviewPage(wx.Panel):
                     num = 0
                     for tupleTable in listOfTuple:
                         child = self.listCtrl.AppendItem(self.nodeRootTables, tupleTable[0])
+                        DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(tupleTable[0])
                         if (num % 2) == 0:
                             self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
                         else:
@@ -7773,6 +7779,8 @@ class SQLPreviewPage(wx.Panel):
                             for itemOfTypes in listTypes:  #
                                 typeTypes = filter(None, itemOfTypes.split(" "))
                                 grandson = self.listCtrl.AppendItem(child, typeTypes[0])
+                                if not typeTypes[0] in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+                                    DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(typeTypes[0])
                                 if (num % 2) == 0:
                                     if (jnum % 2) == 0:
                                         self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
@@ -7813,6 +7821,7 @@ class SQLPreviewPage(wx.Panel):
                     num = 0
                     for tupleView in listOfTuple:
                         child = self.listCtrl.AppendItem(self.nodeRootViews, tupleView[0])
+                        DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(tupleView[0])
                         if (num % 2) == 0:
                             self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
                         else:
@@ -7833,6 +7842,8 @@ class SQLPreviewPage(wx.Panel):
                             jnum = 0
                             for itemOfTypes in listTypesOfView:  #
                                 grandson = self.listCtrl.AppendItem(child, itemOfTypes[1])
+                                if not itemOfTypes[1] in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+                                    DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(itemOfTypes[1])
                                 if (num % 2) == 0:
                                     if (jnum % 2) == 0:
                                         self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
@@ -8486,10 +8497,13 @@ class SQLExecuteSQLPage(wx.Panel):
         strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLine()
         logger.info("Get input message: " + strCurLine)
         try:
+            strCurLine = strCurLine.strip(';\t\n\r')
             # select distinct field_name from table
-            self.curs.execute(strCurLine + ";")
+            t1 = time.time()
+            self.curs.execute(strCurLine)
             # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
             rtsSQLQuery = self.curs.fetchall()
+            t2 = time.time()
             # (('field_type', None, None, None, None, None, None),)
             rtsQueryScheme = self.curs.description
             # 1. prepare col for result grid control
@@ -8498,6 +8512,12 @@ class SQLExecuteSQLPage(wx.Panel):
             # 2. prepare row for result grid control
             listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
             pageSelected.InitListCtrlColumnsValues(listRowsValues)
+            # 3. reports
+            # xxx rows returned in 4ms from: sql query
+            # xxx Reihen innerhalb von 282ms zurueckgegeben von: sql query
+            logger.info("Get report: %d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue("%d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
             return True
         except sqlite3.OperationalError as e:
             pageSelected.TCSQLExecutedInfo.Clear()
@@ -8530,10 +8550,10 @@ class SQLNotebookTab(wx.Panel):
         self.WinSQLCommands = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         self.WinSQLCommands.SetBackgroundColour("red")
         self.STCSQLCommands = stc.StyledTextCtrl(self.WinSQLCommands, wx.ID_ANY)
-        self.STCSQLCommands.metadata = None        # dict of uuid, origin for line tracking
-        self.STCSQLCommands.clipboard = None       # lines text and metadata for cut/paste
+        self.STCSQLCommands.metadata = None  # dict of uuid, origin for line tracking
+        self.STCSQLCommands.clipboard = None  # lines text and metadata for cut/paste
         self.STCSQLCommands.EmptyUndoBuffer()
-        #self.STCSQLCommands.clipboard = wx.TheClipboard()
+        # self.STCSQLCommands.clipboard = wx.TheClipboard()
         # set keywords list
         self.STCSQLCommands.SetLexer(stc.STC_LEX_SQL) 
         self.STCSQLCommands.SetKeyWords(0, " ".join(DEFAULT_SQLITE_KEY_WORDS_LIST))
@@ -8543,8 +8563,8 @@ class SQLNotebookTab(wx.Panel):
         # set styles
         self.STCSQLCommands.StyleClearAll()  # Reset all to be like the default
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
-        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 2, face1))
-        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 2))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 1, face1))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 1))
         self.STCSQLCommands.StyleSetCase(stc.STC_SQL_WORD, stc.STC_CASE_UPPER)
         # bind events
         self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
@@ -8711,6 +8731,17 @@ class SQLNotebookTab(wx.Panel):
                                   event.GetLength(),
                                   repr(event.GetText())))
         
+        strWord = self.GetWord()
+        logger.error("Get word :" + strWord)
+        if len(strWord) < 3:
+            return
+        if strWord in DEFAULT_SQLITE_KEY_WORDS_LIST:
+            return 
+        if strWord in str(DEFAULT_AUTOCOMPLETE_WORDS_LIST):
+            self.AutoComplete()
+        else:
+            pass
+        
     def OnSTCCut(self):
         "Override default Cut to track lines using an internal clipboard"
         start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
@@ -8789,9 +8820,17 @@ class SQLNotebookTab(wx.Panel):
             word = ''
         else:
             word = self.GetWord()
-        words = ["hallo", "ddddede"]
-        if words:
+        
+        words = []
+        for autoWord in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+            if word in str(autoWord):
+                words.append(str(autoWord))
+        if len(words) > 1:
             self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
+        elif not word in words:
+            self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
+        else:
+            pass
     
     def GetWord(self, whole=None, pos=None):
         """
@@ -8845,7 +8884,7 @@ class SQLNotebookTab(wx.Panel):
             attr.SetReadOnly(True)
             self.MyResultGrid.SetColAttr(index, attr)
             self.MyResultGrid.SetColSize(index, 200)
-        #self.MyResultGrid.Arrange()
+        # self.MyResultGrid.Arrange()
     
     def InitListCtrlColumnsValues(self, listRowsValues):
         wait = wx.BusyCursor()
