@@ -19,7 +19,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-03'
+__updated__ = '2018-09-04'
 
 import sqlite3
 import os, sys
@@ -8457,7 +8457,16 @@ class SQLExecuteSQLPage(wx.Panel):
             )
         if dlg.ShowModal() == wx.ID_OK:
             if dlg.GetPath() != "":
-                if DEBUG_STDOUT: print dlg.GetPath()
+                iSelected = self.MySQLNotebook.GetSelection()
+                pageSelected = self.MySQLNotebook.GetPage(iSelected)
+                pageSelected.STCSQLCommands.Clear()
+                logger.info("The selected Path : " + dlg.GetPath())
+                sqlines = [""]
+                with open(dlg.GetPath(), "r") as sql:
+                    sqlines = sql.readlines()
+                    sql.close()
+                strAllLines = "".join(sqlines)
+                pageSelected.STCSQLCommands.ChangeValue(strAllLines)
         else:
             pass
         
@@ -8479,15 +8488,54 @@ class SQLExecuteSQLPage(wx.Panel):
     def OnImgBtnPlaySQLClicked(self, event):  # @UnusedVariable
         iSelected = self.MySQLNotebook.GetSelection()
         pageSelected = self.MySQLNotebook.GetPage(iSelected)
-        strAllText = pageSelected.STCSQLCommands.GetTextUTF8()
-        sqlScript = strAllText.replace("\n", ";\n")
-        logger.info(sqlScript)
+        strAllText = pageSelected.STCSQLCommands.GetText()
+        logger.info(strAllText)
+        sqlines = strAllText.split(";")
         try:
-            self.curs.executescript(sqlScript)
+            # Reset marker at the first line
+            pageSelected.STCSQLCommands.MarkerDeleteAll(0)
+            pageSelected.STCSQLCommands.MarkerAdd(0, 0)
+            for idx, sql in enumerate(sqlines):
+                strCurLine = sql.strip(';\t\n\r')
+                # set the current line marker
+                pageSelected.STCSQLCommands.MarkerDeleteAll(0)
+                pageSelected.STCSQLCommands.MarkerAdd(idx, 0)
+                # select distinct field_name from table
+                t1 = time.time()
+                self.curs.execute(strCurLine)
+                # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
+                rtsSQLQuery = self.curs.fetchall()
+                t2 = time.time()
+                listRowsValues = []
+                if any(rtsSQLQuery):
+                    # not empty
+                    # (('field_type', None, None, None, None, None, None),)
+                    rtsQueryScheme = self.curs.description
+                    # 1. prepare col for result grid control
+                    info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
+                    pageSelected.InitListCtrlColumns(info_tables)
+                    # 2. prepare row for result grid control
+                    listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
+                    pageSelected.InitListCtrlColumnsValues(listRowsValues)
+                    # 3. reports
+                    # xxx rows returned in 4ms from: sql query
+                    # xxx Reihen innerhalb von 282ms zurueckgegeben von: sql query
+                pageSelected.TCSQLExecutedInfo.Clear()
+                if any(listRowsValues):
+                    logger.info("Get report: %d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+                    pageSelected.TCSQLExecutedInfo.ChangeValue("%d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+                else:
+                    # Query executed successfully:
+                    logger.info("Query executed successfully in %.1fms : %s" % ((t2 - t1) * 1000, strCurLine))
+                    pageSelected.TCSQLExecutedInfo.ChangeValue("Query executed successfully in %.1fms : %s" % ((t2 - t1) * 1000, strCurLine))
             return True
         except sqlite3.OperationalError as e:  # @UnusedVariable
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
             return False
         except Exception as e:  # @UnusedVariable
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
             return False
     
     def OnImgBtnStepSQLClicked(self, event):  # @UnusedVariable
@@ -8504,14 +8552,16 @@ class SQLExecuteSQLPage(wx.Panel):
             # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
             rtsSQLQuery = self.curs.fetchall()
             t2 = time.time()
-            # (('field_type', None, None, None, None, None, None),)
-            rtsQueryScheme = self.curs.description
-            # 1. prepare col for result grid control
-            info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
-            pageSelected.InitListCtrlColumns(info_tables)
-            # 2. prepare row for result grid control
-            listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
-            pageSelected.InitListCtrlColumnsValues(listRowsValues)
+            if any(rtsSQLQuery):
+                # not empty
+                # (('field_type', None, None, None, None, None, None),)
+                rtsQueryScheme = self.curs.description
+                # 1. prepare col for result grid control
+                info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
+                pageSelected.InitListCtrlColumns(info_tables)
+                # 2. prepare row for result grid control
+                listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
+                pageSelected.InitListCtrlColumnsValues(listRowsValues)
             # 3. reports
             # xxx rows returned in 4ms from: sql query
             # xxx Reihen innerhalb von 282ms zurueckgegeben von: sql query
