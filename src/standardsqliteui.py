@@ -6187,6 +6187,75 @@ if DEBUG_STDOUT:
 else:
     logger = logging.getLogger(' #PySQLiteMGer64# ')
 
+
+class MyCommitEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+
+class MyRollbackEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+class MySQLiteChangedEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+        
+class MySQLiteReadyEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+
+#save changes
+myEVT_COMMIT = wx.NewEventType()
+EVT_COMMIT = wx.PyEventBinder(myEVT_COMMIT, 1)
+#roll back event
+myEVT_ROLLBACK = wx.NewEventType()
+EVT_ROLLBACK = wx.PyEventBinder(myEVT_ROLLBACK, 1)
+#sqlite changed event for enable menus commit/revert
+myEVT_SQLITE_CHANGED = wx.NewEventType()
+EVT_SQLITE_CHANGED = wx.PyEventBinder(myEVT_SQLITE_CHANGED, 1)
+#sqlite ready event for disable menus commit/revert
+myEVT_SQLITE_READY = wx.NewEventType()
+EVT_SQLITE_READY = wx.PyEventBinder(myEVT_SQLITE_READY, 1)
+
+
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
@@ -6456,9 +6525,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                     menu.AppendItem(itemUncheck)
                     itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
                     menu.AppendItem(itemView)
-                    
-                    
-                    
+
                                                                 
                     if self.GetItem(iColumn).GetImage():
                         itemCheck.Enable(False)
@@ -7577,6 +7644,8 @@ class SQLPreviewPage(wx.Panel):
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.listCtrl.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK , self.OnContextMenu)
+        self.Bind(EVT_COMMIT, self.OnSQLChangeCommited)
+        self.Bind(EVT_ROLLBACK, self.OnSQLChangeReverted)
         
         self.strSQLitePath = ""
         self.conn = None
@@ -7586,6 +7655,14 @@ class SQLPreviewPage(wx.Panel):
         
         self.SetSizerAndFit(self.sizer)
         self.sizer.Layout()
+        
+    def OnSQLChangeCommited(self, event):  # @UnusedVariable
+        if self.conn:
+            self.conn.commit()
+        
+    def OnSQLChangeReverted(self, event):  # @UnusedVariable
+        if self.conn:
+            self.conn.rollback()
     
     def OnContextMenu(self, event):
 
@@ -8577,7 +8654,6 @@ class SQLExecuteSQLPage(wx.Panel):
             pageSelected.TCSQLExecutedInfo.Clear()
             pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
             return False
-            
 
 
 class SQLNotebookTab(wx.Panel):
@@ -9396,7 +9472,16 @@ class MainFrame(wx.Frame):
 
         # 1st menu from left
         self.menu1 = wx.Menu()
-        self.menu1.Append(101, GetTranslationText(1026, "&Close"),
+        self.menu1.Append(107, "&Save Changes",
+                          "Commit changes")
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(False)
+        self.menu1.Append(108, "&Revert Changes",
+                          "Revert changes")
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(False)
+        self.menu1.AppendSeparator() 
+        self.menu1.Append(109, GetTranslationText(1026, "&Close"),
                           GetTranslationText(1027, "Close this frame"))
         # Add menu to the menu bar
         menuBar.Append(self.menu1, GetTranslationText(1028, "&File"))
@@ -9459,8 +9544,12 @@ class MainFrame(wx.Frame):
         
         # Menu events
         self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
-
-        self.Bind(wx.EVT_MENU, self.Menu101, id=101)
+        #save changes
+        self.Bind(wx.EVT_MENU, self.Menu107, id=107)
+        #roll-back
+        self.Bind(wx.EVT_MENU, self.Menu108, id=108)
+        #close
+        self.Bind(wx.EVT_MENU, self.Menu109, id=109)
 
         self.Bind(wx.EVT_MENU, self.Menu300, id=300)
         self.Bind(wx.EVT_MENU, self.Menu301, id=301)
@@ -9475,6 +9564,8 @@ class MainFrame(wx.Frame):
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClose)
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(wx.EVT_MENU_OPEN, self.OnMenuViewOpen)
+        self.Bind(EVT_SQLITE_CHANGED, self.OnSQLiteChanged)
+        self.Bind(EVT_SQLITE_READY, self.OnSQLiteReady)
         # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
         self.Show()
     
@@ -9487,9 +9578,40 @@ class MainFrame(wx.Frame):
             text = item.GetText()  # @UnusedVariable
             help = item.GetHelp()  # @ReservedAssignment
         # but in this case just call Skip so the default is done
-        event.Skip() 
+        event.Skip()
+    
+    def Menu107(self, event):  # @UnusedVariable
+        """
+        Save changes
+        """
+        #create an object of EVT_COMMIT event
+        evt = MyCommitEvent(myEVT_COMMIT, 107)
+        #set event argument
+        evt.SetEventArgs("Save Changes")
+        #throw event
+        wx.PostEvent(self.PreveiwPage, evt)
+        # disable itself, do not worry, the event handler 
+        # will be called after this handler finished
+        self.OnSQLiteReady(None)
+    
+    def Menu108(self, event):  # @UnusedVariable
+        """
+        Revert changes
+        """
+        #create an object of EVT_COMMIT event
+        evt = MyRollbackEvent(myEVT_ROLLBACK, 108)
+        #set event argument
+        evt.SetEventArgs("Save Changes")
+        #throw event
+        wx.PostEvent(self.PreveiwPage, evt)
+        # disable itself, do not worry, the event handler 
+        # will be called after this handler finished
+        self.OnSQLiteReady(None)
 
-    def Menu101(self, event):  # @UnusedVariable
+    def Menu109(self, event):  # @UnusedVariable
+        """
+        Close Menu
+        """
         self.Close()
 
     def Menu300(self, event):  # @UnusedVariable
@@ -9581,7 +9703,18 @@ class MainFrame(wx.Frame):
                 self.menu3.FindItemByPosition(5).Check(lt[5])
         else:
             pass
-
+        
+    def OnSQLiteChanged(self, event):  # @UnusedVariable
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(True)
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(True)
+    
+    def OnSQLiteReady(self, event):  # @UnusedVariable
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(False)
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(False)
 
 
 def GetTranslationText(idMsg=None, default=""):
