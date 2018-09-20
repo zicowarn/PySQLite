@@ -9530,26 +9530,35 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menuBar)
         
-        self.nb = aui.AuiNotebook(self, wx.ID_ANY, agwStyle=aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT | 
-                                  aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         
-        self.PreveiwPage = SQLPreviewPage(self.nb)
-        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"), wx.ITEM_RADIO)
-        self.ViewTablePage = SQLViewTablePage(self.nb)
-        self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
-        self.ExecutePage = SQLExecuteSQLPage(self.nb)
-        self.nb.AddPage(self.ExecutePage, GetTranslationText(1065, "Execute SQL"))
-        self.ImportPage = SQLImportPage(self.nb)
-        self.nb.AddPage(self.ImportPage, GetTranslationText(1031, "Import"))
-        self.ExportPage = SQLExportPage(self.nb)
-        self.nb.AddPage(self.ExportPage, GetTranslationText(1033, "Export"))
-        self.MigratePage = SQLMigratePage(self.nb)
-        self.nb.AddPage(self.MigratePage, GetTranslationText(1035, "Migrate"))
+        # tell FrameManager to manage this frame        
+        self._mgr = aui.AuiManager()
+        self._mgr.SetManagedWindow(self)
         
         
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.nb, 1, wx.EXPAND)
-        self.SetSizer(self.sizer)
+        self._mgr.AddPane(self.CreateMainPanel(), aui.AuiPaneInfo().Name("Main_Panel").CenterPane().Hide())
+        
+        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("Text_Panel").CenterPane().Hide())
+        
+        perspective_all = self._mgr.SavePerspective()
+        
+        all_panes = self._mgr.GetAllPanes()
+        
+        for ii in xrange(len(all_panes)):
+            if not all_panes[ii].IsToolbar():
+                all_panes[ii].Hide()
+        
+        self._mgr.GetPane("Text_Panel").Show().Bottom().Layer(0).Row(0).Position(0)
+        self._mgr.GetPane("Main_Panel").Show()
+        
+        perspective_default = self._mgr.SavePerspective()
+        
+        self._perspectives.append(perspective_default)
+        self._perspectives.append(perspective_all)
+        
+        # "commit" all changes made to FrameManager   
+        self._mgr.Update()
+        
         
         # Menu events
         self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
@@ -9577,6 +9586,43 @@ class MainFrame(wx.Frame):
         self.Bind(EVT_SQLITE_READY, self.OnSQLiteReady)
         # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
         self.Show()
+        
+    
+    def CreateMainPanel(self):
+        self.nb = aui.AuiNotebook(self, wx.ID_ANY, agwStyle=aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT | 
+                                  aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
+        
+        self.PreveiwPage = SQLPreviewPage(self.nb)
+        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"), wx.ITEM_RADIO)
+        self.ViewTablePage = SQLViewTablePage(self.nb)
+        self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
+        self.ExecutePage = SQLExecuteSQLPage(self.nb)
+        self.nb.AddPage(self.ExecutePage, GetTranslationText(1065, "Execute SQL"))
+        self.ImportPage = SQLImportPage(self.nb)
+        self.nb.AddPage(self.ImportPage, GetTranslationText(1031, "Import"))
+        self.ExportPage = SQLExportPage(self.nb)
+        self.nb.AddPage(self.ExportPage, GetTranslationText(1033, "Export"))
+        self.MigratePage = SQLMigratePage(self.nb)
+        self.nb.AddPage(self.MigratePage, GetTranslationText(1035, "Migrate"))
+        return self.nb
+    
+    
+    def CreateTextPanel(self):
+        text = ("This is text box %d") % (2 + 1)
+        tp = wx.TextCtrl(self, -1, text, wx.Point(0, 0), wx.Size(150, 90),
+                           wx.NO_BORDER | wx.TE_MULTILINE)
+        return tp
+        
+    
+    def OnCreateText(self, event):  # @UnusedVariable
+        """
+        Example code for add a panel dynamic 
+        """
+        self._mgr.AddPane(self.CreateTextCtrl(), aui.AuiPaneInfo().
+                          Caption("Text Control").
+                          Float().FloatingPosition(self.GetStartPosition()).
+                          CloseButton(True).MaximizeButton(True))
+        self._mgr.Update()
     
     # Methods
     def OnMenuHighlight(self, event):
