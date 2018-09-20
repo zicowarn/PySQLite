@@ -19,7 +19,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-04'
+__updated__ = '2018-09-20'
 
 import sqlite3
 import os, sys
@@ -6242,16 +6242,16 @@ class MySQLiteReadyEvent(wx.PyCommandEvent):
         self.eventArgs = args
 
 
-#save changes
+# save changes
 myEVT_COMMIT = wx.NewEventType()
 EVT_COMMIT = wx.PyEventBinder(myEVT_COMMIT, 1)
-#roll back event
+# roll back event
 myEVT_ROLLBACK = wx.NewEventType()
 EVT_ROLLBACK = wx.PyEventBinder(myEVT_ROLLBACK, 1)
-#sqlite changed event for enable menus commit/revert
+# sqlite changed event for enable menus commit/revert
 myEVT_SQLITE_CHANGED = wx.NewEventType()
 EVT_SQLITE_CHANGED = wx.PyEventBinder(myEVT_SQLITE_CHANGED, 1)
-#sqlite ready event for disable menus commit/revert
+# sqlite ready event for disable menus commit/revert
 myEVT_SQLITE_READY = wx.NewEventType()
 EVT_SQLITE_READY = wx.PyEventBinder(myEVT_SQLITE_READY, 1)
 
@@ -7617,7 +7617,7 @@ class SQLPreviewPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
+            fileMask="sqlite (*.SQLite)|*.sqlite|All file (*.*)|*.*",
             changeCallback=self.OnOpenDatabaseCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
@@ -7869,8 +7869,12 @@ class SQLPreviewPage(wx.Panel):
                                     else:
                                         self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
                                 self.listCtrl.SetPyData(grandson, None)
-                                self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
-                                self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (typeTypes[0], ' '.join(typeTypes[1:]))), 2)
+                                if len(typeTypes) == 1:  # warning, means the filed has no type definition 
+                                    self.listCtrl.SetItemText(grandson, 'UNDEFINED', 1)  # use TEXT as default
+                                    self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (typeTypes[0], "UNDEFINED")), 2)
+                                else:
+                                    self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
+                                    self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (typeTypes[0], ' '.join(typeTypes[1:]))), 2)
                                 self.listCtrl.SetItemImage(grandson, self.imgType)
                                 self.listCtrl.SetItemImage(grandson, self.imgType)
                                 jnum += 1
@@ -7932,8 +7936,13 @@ class SQLPreviewPage(wx.Panel):
                                     else:
                                         self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
                                 self.listCtrl.SetPyData(grandson, None)
-                                self.listCtrl.SetItemText(grandson, itemOfTypes[2], 1)
-                                self.listCtrl.SetItemText(grandson, ("`%s`  %s " % (itemOfTypes[1], itemOfTypes[2])), 2)
+                                
+                                if len(itemOfTypes) == 1:  # warning, means the filed has no type definition 
+                                    self.listCtrl.SetItemText(grandson, 'UNDEFINED', 1)  # use TEXT as default
+                                    self.listCtrl.SetItemText(grandson, ("`%s`  %s" % (itemOfTypes[0], "UNDEFINED")), 2)
+                                else:
+                                    self.listCtrl.SetItemText(grandson, itemOfTypes[2], 1)
+                                    self.listCtrl.SetItemText(grandson, ("`%s`  %s " % (itemOfTypes[1], itemOfTypes[2])), 2)
                                 self.listCtrl.SetItemImage(grandson, self.imgType)
                                 self.listCtrl.SetItemImage(grandson, self.imgType)
                                 jnum += 1
@@ -9544,11 +9553,11 @@ class MainFrame(wx.Frame):
         
         # Menu events
         self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
-        #save changes
+        # save changes
         self.Bind(wx.EVT_MENU, self.Menu107, id=107)
-        #roll-back
+        # roll-back
         self.Bind(wx.EVT_MENU, self.Menu108, id=108)
-        #close
+        # close
         self.Bind(wx.EVT_MENU, self.Menu109, id=109)
 
         self.Bind(wx.EVT_MENU, self.Menu300, id=300)
@@ -9584,11 +9593,11 @@ class MainFrame(wx.Frame):
         """
         Save changes
         """
-        #create an object of EVT_COMMIT event
+        # create an object of EVT_COMMIT event
         evt = MyCommitEvent(myEVT_COMMIT, 107)
-        #set event argument
+        # set event argument
         evt.SetEventArgs("Save Changes")
-        #throw event
+        # throw event
         wx.PostEvent(self.PreveiwPage, evt)
         # disable itself, do not worry, the event handler 
         # will be called after this handler finished
@@ -9598,11 +9607,11 @@ class MainFrame(wx.Frame):
         """
         Revert changes
         """
-        #create an object of EVT_COMMIT event
+        # create an object of EVT_COMMIT event
         evt = MyRollbackEvent(myEVT_ROLLBACK, 108)
-        #set event argument
+        # set event argument
         evt.SetEventArgs("Save Changes")
-        #throw event
+        # throw event
         wx.PostEvent(self.PreveiwPage, evt)
         # disable itself, do not worry, the event handler 
         # will be called after this handler finished
