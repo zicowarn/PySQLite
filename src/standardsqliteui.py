@@ -6293,7 +6293,7 @@ class SQLiteListCtrlPyData():
     def GetViewText(self):
         return self._strView
     
-    def GetFiledText(self):
+    def GetFieldText(self):
         return self._strField
     
     def GetTypeText(self):
@@ -7052,7 +7052,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             if not self.isLeftFocused:
                 self.rightPart.SetBackgroundColour(wx.NullColour)
                 self.rightPart.Refresh()
@@ -7101,7 +7101,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             if not self.isRightFocused:
                 self.leftPart.SetBackgroundColour(wx.NullColour)
                 self.leftPart.Refresh()
@@ -7619,7 +7619,7 @@ class SQLImportPage(wx.Panel):
     
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
@@ -7734,11 +7734,18 @@ class SQLPreviewPage(wx.Panel):
                     self.popupIDCopyTableSchma = wx.NewId()
                     self.popupIDCopyTableFieldName = wx.NewId()
                     self.popupIDCopyTableFieldType = wx.NewId()
+                    self.popupIDCopyTableFieldSchema = wx.NewId()
                     
                     self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
                     self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDViewInTab)
                     self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
                     self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
+                    
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyTableOrViewOrTriggerName, id=self.popupIDCopyTableName)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyTableOrViewOrTriggerSchema, id=self.popupIDCopyTableSchma)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldName, id=self.popupIDCopyTableFieldName)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldType, id=self.popupIDCopyTableFieldType)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldSchema, id=self.popupIDCopyTableFieldSchema)
                     
                 menu = wx.Menu()
                 pyData = event.GetItem().GetData()
@@ -7771,8 +7778,10 @@ class SQLPreviewPage(wx.Panel):
                     event.Skip()
                 elif pyData.IsField():
                     itemCopyFieldName = wx.MenuItem(menu, self.popupIDCopyTableFieldName, "Copy field name")
-                    itemCopyFieldSchema = wx.MenuItem(menu, self.popupIDCopyTableFieldType, "Copy field schema")
+                    itemCopyFieldType = wx.MenuItem(menu, self.popupIDCopyTableFieldType, "Copy field type")
+                    itemCopyFieldSchema = wx.MenuItem(menu, self.popupIDCopyTableFieldSchema, "Copy field schema")
                     menu.AppendItem(itemCopyFieldName)
+                    menu.AppendItem(itemCopyFieldType)
                     menu.AppendItem(itemCopyFieldSchema)
             
                     self.PopupMenu(menu)
@@ -7886,10 +7895,94 @@ class SQLPreviewPage(wx.Panel):
             return True
         else:
             return False
+        
+    def OnMenuCopyTableOrViewOrTriggerName(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsTable():
+            strToCopy = pyData.GetTableText()
+        elif pyData.IsView():
+            strToCopy = pyData.GetViewText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        
+    def OnMenuCopyTableOrViewOrTriggerSchema(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsTable():
+            strToCopy = pyData.GetSchemaText()
+        elif pyData.IsView():
+            strToCopy = pyData.GetSchemaText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldName(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetFieldText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldType(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetTypeText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldSchema(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetSchemaText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
 
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 global DEFAULT_AUTOCOMPLETE_WORDS_LIST
@@ -9078,7 +9171,6 @@ class SQLNotebookTab(wx.Panel):
     def GetWord(self, whole=None, pos=None):
         """
         """
-        # TODO:
         for delta in (0, -1, 1):
             word = self._GetWord(whole=whole, delta=delta, pos=pos)
             if word: return word
@@ -9087,7 +9179,6 @@ class SQLNotebookTab(wx.Panel):
     def _GetWord(self, whole=None, delta=0, pos=None):
         """
         """
-        # TODO:
         if pos is None:
             pos = self.STCSQLCommands.GetCurrentPos() + delta
             line = self.STCSQLCommands.GetCurrentLine()
@@ -9656,7 +9747,7 @@ class MainFrame(wx.Frame):
         
         # 4rd menu from left
         self.menu4 = wx.Menu()
-        self.menu4.Append(401, "Log Window&", "Show log window", wx.ITEM_CHECK)
+        self.menu4.Append(401, "&Log Window", "Show log window", wx.ITEM_CHECK)
         # Append 3rd menu
         menuBar.Append(self.menu4, "&Window")
         
