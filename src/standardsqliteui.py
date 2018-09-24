@@ -12,14 +12,13 @@
 #
 #
 
-
 __author__ = 'Zhichao Wang'
 __email__ = 'ziccowarn@gmail.com'
 __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-21'
+__updated__ = '2018-09-24'
 
 import sqlite3
 import os, sys
@@ -9635,6 +9634,42 @@ class AboutHelpDialog(wx.Dialog):
         self.Destroy()
 
 
+class CustomConsoleHandler(logging.StreamHandler):
+    """"""
+ 
+    #----------------------------------------------------------------------
+    def __init__(self, textctrl):
+        """"""
+        logging.StreamHandler.__init__(self)
+        self.textctrl = textctrl
+ 
+    #----------------------------------------------------------------------
+    def emit(self, record):
+        """Constructor"""
+        msg = self.format(record)
+        self.textctrl.SetInsertionPointEnd()
+        self.textctrl.WriteText(msg + "\n")
+        self.flush()
+
+
+class SQLLogPanel(wx.Panel):
+    """
+    wx.Point(0, 0)
+    wx.Size(150, 90)
+    """
+    
+    def __init__(self, parent, caption=""):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        self.LogTextCtrl = wx.TextCtrl(self, wx.ID_ANY, caption, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.NO_BORDER | wx.TE_MULTILINE)
+        self.CusCosHandler = CustomConsoleHandler(self.LogTextCtrl)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        self.CusCosHandler.setFormatter(formatter)
+        hSizer.Add(self.LogTextCtrl, 1, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 1, wx.EXPAND, 1)
+        self.SetSizerAndFit(vSizer)
+
 
 class MyAuiNoteBook(aui.AuiNotebook):
     def __init__(self, parent, agwStyleList=None):
@@ -9761,15 +9796,13 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menuBar)
         
-        
         # tell FrameManager to manage this frame        
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
         
-        
         self._mgr.AddPane(self.CreateMainPanel(), aui.AuiPaneInfo().Name("Main_Panel").CenterPane().Hide())
         
-        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("Log_Panel").CenterPane().Hide())
+        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("Log_Panel").Caption("Log console").CloseButton(False).MaximizeButton(True).Hide())
         
         perspective_all = self._mgr.SavePerspective()
         
@@ -9817,7 +9850,6 @@ class MainFrame(wx.Frame):
         self.Bind(EVT_SQLITE_READY, self.OnSQLiteReady)
         # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
         self.Show()
-        
     
     def CreateMainPanel(self):
         
@@ -9838,13 +9870,9 @@ class MainFrame(wx.Frame):
         self.nb.AddPage(self.MigratePage, GetTranslationText(1035, "Migrate"))
         return self.nb
     
-    
     def CreateTextPanel(self):
-        text = ("This is text box %d") % (2 + 1)
-        tp = wx.TextCtrl(self, -1, text, wx.Point(0, 0), wx.Size(150, 90),
-                           wx.NO_BORDER | wx.TE_MULTILINE)
+        tp = SQLLogPanel(self)
         return tp
-        
     
     def OnCreateText(self, event):  # @UnusedVariable
         """
@@ -9928,10 +9956,16 @@ class MainFrame(wx.Frame):
     def Menu401(self, event):  # @UnusedVariable
         logger.info('Show Log windows')
         if event.Checked():
-            self._mgr.GetPane("Log_Panel").Show().Bottom().Layer(0).Row(0).Position(0)
+            activPane = self._mgr.GetPane("Log_Panel")
+            activPane.Show().Bottom().Layer(1).Row(0).Position(0)
+            win = activPane.window
+            logger.addHandler(win.CusCosHandler)
             self._mgr.Update()
         else:
-            self._mgr.GetPane("Log_Panel").Hide()
+            activPane = self._mgr.GetPane("Log_Panel")
+            activPane.Hide()
+            win = activPane.window
+            logger.removeHandler(win.CusCosHandler)
             self._mgr.Update()
             
     def Menu501(self, event):  # @UnusedVariable
