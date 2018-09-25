@@ -18,13 +18,15 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-24'
+__updated__ = '2018-09-25'
 
 import sqlite3
 import os, sys
+import imp
 import logging
 import tempfile
 import time
+import keyword
 from datetime import datetime
 import wx  # @UnusedImport
 import wx.lib.agw.aui as aui
@@ -38,6 +40,7 @@ import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
 import wx.lib.agw.hypertreelist as HTL
 from wx.lib.splitter import MultiSplitterWindow
 from wx.lib.embeddedimage import PyEmbeddedImage
+from inspect import getmembers, isfunction
 
 try:
     import agw.flatnotebook as FNB
@@ -6240,6 +6243,23 @@ class MySQLiteReadyEvent(wx.PyCommandEvent):
     def SetEventArgs(self, args):
         self.eventArgs = args
 
+class MySQLiteInsertFunctionEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+# through pass
+# sqlite ready event for create function
+myEVT_SQLITE_INSERT_FUNCTION_CLICKED = wx.NewEventType()
+EVT_SQLITE_INSERT_FUNCTION_CLICKED = wx.PyEventBinder(myEVT_SQLITE_INSERT_FUNCTION_CLICKED, 1)
 
 # save changes
 myEVT_COMMIT = wx.NewEventType()
@@ -6253,6 +6273,9 @@ EVT_SQLITE_CHANGED = wx.PyEventBinder(myEVT_SQLITE_CHANGED, 1)
 # sqlite ready event for disable menus commit/revert
 myEVT_SQLITE_READY = wx.NewEventType()
 EVT_SQLITE_READY = wx.PyEventBinder(myEVT_SQLITE_READY, 1)
+# sqlite ready event for create function
+myEVT_SQLITE_INSERT_FUNCTION = wx.NewEventType()
+EVT_SQLITE_INSERT_FUNCTION = wx.PyEventBinder(myEVT_SQLITE_INSERT_FUNCTION, 1)
 
 class SQLiteListCtrlPyData():
     def __init__(self, isRoot=False, isCatalogy=False, isTable=False, isView=False, isIndex=False, isField=False, strTable="", strView="", strField="", strType="", strSchema=""):
@@ -7693,6 +7716,7 @@ class SQLPreviewPage(wx.Panel):
         self.listCtrl.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK , self.OnContextMenu)
         self.Bind(EVT_COMMIT, self.OnSQLChangeCommited)
         self.Bind(EVT_ROLLBACK, self.OnSQLChangeReverted)
+        self.Bind(EVT_SQLITE_INSERT_FUNCTION, self.OnSQLInsertFunctionClicked)
         
         self.strSQLitePath = ""
         self.conn = None
@@ -7710,6 +7734,13 @@ class SQLPreviewPage(wx.Panel):
     def OnSQLChangeReverted(self, event):  # @UnusedVariable
         if self.conn:
             self.conn.rollback()
+            
+    def OnSQLInsertFunctionClicked(self, event):
+        strCodeText = event.GetEventArgs()
+        tempmodule = imp.new_module('tempmodule')
+        exec(strCodeText)  in tempmodule.__dict__
+        functions_list = [o for o in getmembers(tempmodule, isfunction)]
+        a = 0
     
     def OnContextMenu(self, event):
 
@@ -9669,6 +9700,120 @@ class SQLLogPanel(wx.Panel):
         hSizer.Add(self.LogTextCtrl, 1, wx.EXPAND, 1)
         vSizer.Add(hSizer, 1, wx.EXPAND, 1)
         self.SetSizerAndFit(vSizer)
+        
+
+class SQLPythonFuncPanel(wx.Panel):
+    """
+    """
+    def __init__(self, parent):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        # main sizer
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        # horizontal sizer for text ctrl
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stc = stc.StyledTextCtrl(self, wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize)
+        hSizer.Add(self.stc, 1, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 1, wx.EXPAND, 1)
+        # horizontal sizer for button
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.BtnInsertFuntion = wx.Button(self, wx.ID_ANY, label="Insert Function", pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, name="BTN_INSERT_FUNCTION")
+        hSizer.Add((5, 5), 1, wx.EXPAND, 1)
+        hSizer.Add(self.BtnInsertFuntion, 0, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 0, wx.EXPAND | wx.ALL, 10)
+        self.SetSizerAndFit(vSizer)
+        
+        self.stc.SetLexer(stc.STC_LEX_PYTHON)
+        self.stc.SetKeyWords(0, " ".join(keyword.kwlist))
+
+        self.stc.SetProperty("fold", "1")
+        self.stc.SetProperty("tab.timmy.whinge.level", "1")
+        self.stc.SetMargins(0, 0)
+
+        self.stc.SetViewWhiteSpace(False)
+        # self.stc.SetBufferedDraw(False)
+        # self.stc.SetViewEOL(True)
+        # self.stc.SetEOLMode(stc.STC_EOL_CRLF)
+        # self.stc.SetUseAntiAliasing(True)
+        
+        self.stc.SetEdgeMode(stc.STC_EDGE_BACKGROUND)
+        self.stc.SetEdgeColumn(78)
+
+        # Setup a margin to hold fold markers
+        # self.stc.SetFoldFlags(16)  ###  WHAT IS THIS VALUE?  WHAT ARE THE OTHER FLAGS?  DOES IT MATTER?
+        self.stc.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
+        self.stc.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        self.stc.SetMarginSensitive(2, True)
+        self.stc.SetMarginWidth(2, 12)
+
+        
+        # Like a flattened tree control using circular headers and curved joins
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_CIRCLEMINUS, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDER, stc.STC_MARK_CIRCLEPLUS, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB, stc.STC_MARK_VLINE, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL, stc.STC_MARK_LCORNERCURVE, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEREND, stc.STC_MARK_CIRCLEPLUSCONNECTED, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_CIRCLEMINUSCONNECTED, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNERCURVE, "white", "#404040")
+
+
+        # Make some styles,  The lexer defines what each style is used for, we
+        # just have to define what each style looks like.  This set is adapted from
+        # Scintilla sample property files.
+
+        # Global default styles for all languages
+        self.stc.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(helv)s,size:%(size)d" % faces)
+        self.stc.StyleClearAll()  # Reset all to be like the default
+
+        # Global default styles for all languages
+        self.stc.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(helv)s,size:%(size)d" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "back:#C0C0C0,face:%(helv)s,size:%(size2)d" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#FFFFFF,back:#0000FF,bold")
+        self.stc.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#000000,back:#FF0000,bold")
+
+        # Python styles
+        # Default 
+        self.stc.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        # Comments
+        self.stc.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
+        # Number
+        self.stc.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
+        # String
+        self.stc.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        # Single quoted string
+        self.stc.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        # Keyword
+        self.stc.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
+        # Triple quotes
+        self.stc.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Triple double quotes
+        self.stc.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Class name definition
+        self.stc.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
+        # Function or method name definition
+        self.stc.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
+        # Operators
+        self.stc.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
+        # Identifiers
+        self.stc.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        # Comment-blocks
+        self.stc.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
+        # End of line where string is not closed
+        self.stc.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+
+        self.stc.SetCaretForeground("BLUE")
+        
+        self.BtnInsertFuntion.Bind(wx.EVT_BUTTON, self.OnBtnInsertFuntionClicked)
+        
+    
+    def OnBtnInsertFuntionClicked(self, event):  # @UnusedVariable
+        # create an object of EVT_COMMIT event
+        evt = MySQLiteInsertFunctionEvent(myEVT_SQLITE_INSERT_FUNCTION_CLICKED, wx.ID_ANY)
+        # set event argument
+        evt.SetEventArgs(self.stc.GetTextRaw())
+        # throw event
+        wx.PostEvent(self.GetParent(), evt)
+        # disable itself, do not worry, the event handler 
 
 
 class MyAuiNoteBook(aui.AuiNotebook):
@@ -9715,7 +9860,7 @@ class MyAuiNoteBook(aui.AuiNotebook):
                 self.Parent.SetStatusText(GetTranslationText(1042, "Unkown Page"), 0)
                 self.Parent.SetStatusText("", 1)
                 self.Parent.SetStatusText("", 2)
-
+                
 
 
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
@@ -9782,7 +9927,9 @@ class MainFrame(wx.Frame):
         
         # 4rd menu from left
         self.menu4 = wx.Menu()
-        self.menu4.Append(401, "&Log Window", "Show log window", wx.ITEM_CHECK)
+        self.menu4.Append(401, "&Log window", "Show log window", wx.ITEM_CHECK)
+        self.menu4.Append(402, "&SQL log window", "Show SQL log window", wx.ITEM_CHECK)
+        self.menu4.Append(403, "&Python function Window", "Show function window", wx.ITEM_CHECK)
         # Append 3rd menu
         menuBar.Append(self.menu4, "&Window")
         
@@ -9803,6 +9950,10 @@ class MainFrame(wx.Frame):
         self._mgr.AddPane(self.CreateMainPanel(), aui.AuiPaneInfo().Name("Main_Panel").CenterPane().Hide())
         
         self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("Log_Panel").Caption("Log console").CloseButton(False).MaximizeButton(True).Hide())
+        
+        self._mgr.AddPane(self.CreatePyFuncPanel(), aui.AuiPaneInfo().Name("Func_Panel").Caption("Python function").Right().Row(1).Layer(1).Position(0).CloseButton(False).MaximizeButton(True).Hide())
+        
+        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("SQLog_Panel").Caption("SQL Log").Right().Row(1).Layer(1).Position(1).CloseButton(False).MaximizeButton(True).Hide())
         
         perspective_all = self._mgr.SavePerspective()
         
@@ -9840,6 +9991,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Menu305, id=305)
         # id 400 ~ 499
         self.Bind(wx.EVT_MENU, self.Menu401, id=401)
+        self.Bind(wx.EVT_MENU, self.Menu402, id=402)
+        self.Bind(wx.EVT_MENU, self.Menu403, id=403)
         # id 500 ~ 599
         self.Bind(wx.EVT_MENU, self.Menu501, id=501)
         self.Bind(wx.EVT_MENU, self.Menu502, id=502)
@@ -9848,6 +10001,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU_OPEN, self.OnMenuViewOpen)
         self.Bind(EVT_SQLITE_CHANGED, self.OnSQLiteChanged)
         self.Bind(EVT_SQLITE_READY, self.OnSQLiteReady)
+        self.Bind(EVT_SQLITE_INSERT_FUNCTION_CLICKED, self.OnSQLiteInsertFunctionClicked)
         # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
         self.Show()
     
@@ -9874,6 +10028,10 @@ class MainFrame(wx.Frame):
         tp = SQLLogPanel(self)
         return tp
     
+    def CreatePyFuncPanel(self):
+        tp = SQLPythonFuncPanel(self)
+        return tp
+    
     def OnCreateText(self, event):  # @UnusedVariable
         """
         Example code for add a panel dynamic 
@@ -9894,6 +10052,17 @@ class MainFrame(wx.Frame):
             help = item.GetHelp()  # @ReservedAssignment
         # but in this case just call Skip so the default is done
         event.Skip()
+    
+    def OnSQLiteInsertFunctionClicked(self, event):
+        """
+        Save changes
+        """
+        # create an object of EVT_COMMIT event
+        evt = MyCommitEvent(myEVT_SQLITE_INSERT_FUNCTION, 402)
+        # set event argument
+        evt.SetEventArgs(event.eventArgs)
+        # throw event
+        wx.PostEvent(self.PreveiwPage, evt)
     
     def Menu107(self, event):  # @UnusedVariable
         """
@@ -9922,6 +10091,7 @@ class MainFrame(wx.Frame):
         # disable itself, do not worry, the event handler 
         # will be called after this handler finished
         self.OnSQLiteReady(None)
+        
 
     def Menu109(self, event):  # @UnusedVariable
         """
@@ -9954,18 +10124,44 @@ class MainFrame(wx.Frame):
         self.nb.SetSelection(2)
     
     def Menu401(self, event):  # @UnusedVariable
-        logger.info('Show Log windows')
         if event.Checked():
+            logger.info('Show Log windows')
             activPane = self._mgr.GetPane("Log_Panel")
             activPane.Show().Bottom().Layer(1).Row(0).Position(0)
             win = activPane.window
             logger.addHandler(win.CusCosHandler)
             self._mgr.Update()
         else:
+            logger.info('Hide Log windows')
             activPane = self._mgr.GetPane("Log_Panel")
             activPane.Hide()
             win = activPane.window
             logger.removeHandler(win.CusCosHandler)
+            self._mgr.Update()
+            
+    
+    def Menu402(self, event):  # @UnusedVariable
+        if event.Checked():
+            logger.info('Show SQL Log windows')
+            activPane = self._mgr.GetPane("SQLog_Panel")
+            activPane.Show()
+            self._mgr.Update()
+        else:
+            logger.info('Hide SQL Log windows')
+            activPane = self._mgr.GetPane("SQLog_Panel")
+            activPane.Hide()
+            self._mgr.Update()
+    
+    def Menu403(self, event):  # @UnusedVariable
+        if event.Checked():
+            logger.info('Show Python function windows')
+            activPane = self._mgr.GetPane("Func_Panel")
+            activPane.Show()
+            self._mgr.Update()
+        else:
+            logger.info('Hide Python function windows')
+            activPane = self._mgr.GetPane("Func_Panel")
+            activPane.Hide()
             self._mgr.Update()
             
     def Menu501(self, event):  # @UnusedVariable
