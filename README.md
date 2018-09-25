@@ -19,6 +19,121 @@ Project characteristics
 The software currently supports Chinese, English and German. You can set the display language by changing the "DEFAULT_LANGUAGE" global variable. If you have more questions, or better suggestions. Welcome to contact me.
 
 
+Application interface introduction
+--
+
+#####The following is an introduction to the application interface.
+
+<p>
+<img align="left" src="./doc/doc_preview_screenshot.png" width="400">	
+
+This tab is used in the user list database to say that there are tables, views and triggers. It is also possible to display the data type and schema for each field of each table.
+
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+<p>
+<img align="right" src="./doc/doc_viewdata_screenshot.png" width="400">
+This tab looks at the data in each table in the User column, and the background color of different data types. Users can use the dropdown control to switch between tables. The button on the right mouse button copies the contents of the selected cell or selected line in the clipboard.
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+<p>
+<img align="left" src="./doc/doc_execute_screenshot.png" width="400">
+This tab is used to execute the sql command entered by the user. If the command is executed correctly, the execution result will be displayed. The execution report is displayed at the bottom. Sql can be imported from a file, or you can save the sql command as a file. Commands can be executed line by line or all at once.
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+<p>
+<img align="right" src="./doc/doc_import_screenshot.png" width="400">
+This tab is used to import SQLite database tables.
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+<p>
+<img align="left" src="./doc/doc_export_screenshot.png" width="400">
+This tab is used to export SQLite database tables.
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
+
+<p>
+<img align="right" src="./doc/doc_migrate_screenshot.png" width="400">
+This tab is used to migrate SQLite database tables.Of course the migration is two-way, meaning that this user can migrate a table from database A (left) to database B (right). Or the opposite direction.
+</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+---
 
 License
 --
