@@ -39,7 +39,8 @@ This tab is used in the user list database to say that there are tables, views a
 <br>
 <br>
 <br>
-
+<br>
+<br>
 <p>
 <img align="right" src="./doc/doc_viewdata_screenshot.png" width="600">
 This tab looks at the data in each table in the User column, and the background color of different data types. Users can use the dropdown control to switch between tables. The button on the right mouse button copies the contents of the selected cell or selected line in the clipboard.
@@ -50,7 +51,8 @@ This tab looks at the data in each table in the User column, and the background 
 <br>
 <br>
 <br>
-
+<br>
+<br>
 <p>
 <img align="left" src="./doc/doc_execute_screenshot.png" width="600">
 This tab is used to execute the sql command entered by the user. If the command is executed correctly, the execution result will be displayed. The execution report is displayed at the bottom. Sql can be imported from a file, or you can save the sql command as a file. Commands can be executed line by line or all at once.
@@ -79,7 +81,10 @@ This tab is used to import SQLite database tables.
 <br>
 <br>
 <br>
-
+<br>
+<br>
+<br>
+<br>
 <p>
 <img align="left" src="./doc/doc_export_screenshot.png" width="600">
 This tab is used to export SQLite database tables.
@@ -95,8 +100,10 @@ This tab is used to export SQLite database tables.
 <br>
 <br>
 <br>
-
-
+<br>
+<br>
+<br>
+<br>
 <p>
 <img align="right" src="./doc/doc_migrate_screenshot.png" width="600">
 This tab is used to migrate SQLite database tables.Of course the migration is two-way, meaning that this user can migrate a table from database A (left) to database B (right). Or the opposite direction.
@@ -110,7 +117,8 @@ This tab is used to migrate SQLite database tables.Of course the migration is tw
 <br>
 <br>
 <br>
-
+<br>
+<br>
 ---
 
 License
