@@ -18,7 +18,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-09-25'
+__updated__ = '2018-11-07'
 
 import sqlite3
 import os, sys
@@ -7316,7 +7316,7 @@ class SQLExportPage(wx.Panel):
             table_name = strExpertTable
             yield('BEGIN TRANSACTION;')
         else:
-            pass
+            table_name = strExpertTable
         
         if isCreateCommand:
             q = 'DROP TABLE IF EXISTS "%s";' % table_name;
