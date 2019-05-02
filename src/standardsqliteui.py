@@ -7,7 +7,7 @@
 # You can redistribute it and/or modify it under the
 # terms of the Do What The Fuck You Want To  MIT License
 # as published by Zhichao Wang. contact: ziccowarn@gmail.com for more details.
-#
+# 
 # Copyright © 2018 Zhichao Wang <ziccowarn@gmail.com>
 #
 #
@@ -19,12 +19,15 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-31'
+__updated__ = '2018-11-07'
 
 import sqlite3
 import os, sys
+import imp
 import logging
 import tempfile
+import time
+import keyword
 from datetime import datetime
 import wx  # @UnusedImport
 import wx.lib.agw.aui as aui
@@ -35,8 +38,10 @@ import wx.combo
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
+import wx.lib.agw.hypertreelist as HTL
 from wx.lib.splitter import MultiSplitterWindow
 from wx.lib.embeddedimage import PyEmbeddedImage
+from inspect import getmembers, isfunction
 
 try:
     import agw.flatnotebook as FNB
@@ -53,16 +58,16 @@ if wx.Platform == '__WXMSW__':
               'size' : 10,
               'size2': 8,
              }
-    face1 = 'Arial'
-    face2 = 'Times New Roman'
-    face3 = 'Courier New'
-    pb = 12
+    face1 = 'Helvetica'
+    face2 = 'Times'
+    face3 = 'Courier'
+    pb = 9
 elif wx.Platform == '__WXMAC__':
     faces = { 'times': 'Times New Roman',
               'mono' : 'Monaco',
               'helv' : 'Arial',
               'other': 'Comic Sans MS',
-              'size' : 12,
+              'size' : 10,
               'size2': 10,
              }
     face1 = 'Helvetica'
@@ -74,7 +79,7 @@ else:
               'mono' : 'Courier',
               'helv' : 'Helvetica',
               'other': 'new century schoolbook',
-              'size' : 12,
+              'size' : 10,
               'size2': 10,
              }
     face1 = 'Helvetica'
@@ -112,6 +117,8 @@ DEFAULT_SQLITE_KEY_WORDS_LIST = ['abort', 'action', 'add', 'after', 'all',
                                  'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger',
                                  'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual',
                                  'when', 'where', 'with', 'without' ]
+
+DEFAULT_AUTOCOMPLETE_WORDS_LIST = []
 
 DEFAULT_TRANSLATION_DICT = {
                             "049" : {
@@ -5883,6 +5890,142 @@ iconTable = PyEmbeddedImage(
     "ZQAyMDA4LTEwLTIzVDExOjU5OjUwKzA4OjAwvN94aQAAAABJRU5ErkJggg==")
 
 
+iconView = PyEmbeddedImage(
+    "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")
+
+
+iconIndex = PyEmbeddedImage(
+    "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")
+
+
+iconTrigger = PyEmbeddedImage(
+    "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"
+    "gg==")
+
+
+iconType = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEU2QUxye4VocXpmbndq"
+    "c310fohweoTFz9ltdoBveIL///8AAAAAAAAAAAAAAAAAAABMPK6yAAAAC3RSTlP/////////"
+    "////AEpPAfIAAAABYktHRA8YugDZAAAACXBIWXMAAABIAAAASABGyWs+AAAACXZwQWcAAAAQ"
+    "AAAAEABcxq3DAAAAOUlEQVQI12NYBQUM+BgLGICAC8hYVhXAujwLLCXACFUzgRPKaOCAMhxY"
+    "oAwFJijDgBnCWAAyBp9dAExISA7e1HJGAAAAJXRFWHRjcmVhdGUtZGF0ZQAyMDA4LTEwLTIz"
+    "VDExOjU4OjM2KzA4OjAwqRNZ3gAAACV0RVh0bW9kaWZ5LWRhdGUAMjAwOC0xMC0yM1QxMTo1"
+    "OTo1MCswODowMLzfeGkAAAAASUVORK5CYII=")
+
+
 iconPlay = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
     "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCyUCwj3lpgAABZhJREFUSMeNlm2MXFUZ"
@@ -6046,6 +6189,142 @@ if DEBUG_STDOUT:
     logger = logging.getLogger(' #PySQLiteMGer64# ')
 else:
     logger = logging.getLogger(' #PySQLiteMGer64# ')
+
+
+class MyCommitEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+
+class MyRollbackEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+class MySQLiteChangedEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+        
+class MySQLiteReadyEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+class MySQLiteInsertFunctionEvent(wx.PyCommandEvent):
+    '''
+    '''
+    def __init__(self, evtType, id):  # @ReservedAssignment
+        wx.PyCommandEvent.__init__(self, evtType, id)  
+        self.eventArgs = ""
+          
+    def GetEventArgs(self):
+        return self.eventArgs
+  
+    def SetEventArgs(self, args):
+        self.eventArgs = args
+
+# through pass
+# sqlite ready event for create function
+myEVT_SQLITE_INSERT_FUNCTION_CLICKED = wx.NewEventType()
+EVT_SQLITE_INSERT_FUNCTION_CLICKED = wx.PyEventBinder(myEVT_SQLITE_INSERT_FUNCTION_CLICKED, 1)
+
+# save changes
+myEVT_COMMIT = wx.NewEventType()
+EVT_COMMIT = wx.PyEventBinder(myEVT_COMMIT, 1)
+# roll back event
+myEVT_ROLLBACK = wx.NewEventType()
+EVT_ROLLBACK = wx.PyEventBinder(myEVT_ROLLBACK, 1)
+# sqlite changed event for enable menus commit/revert
+myEVT_SQLITE_CHANGED = wx.NewEventType()
+EVT_SQLITE_CHANGED = wx.PyEventBinder(myEVT_SQLITE_CHANGED, 1)
+# sqlite ready event for disable menus commit/revert
+myEVT_SQLITE_READY = wx.NewEventType()
+EVT_SQLITE_READY = wx.PyEventBinder(myEVT_SQLITE_READY, 1)
+# sqlite ready event for create function
+myEVT_SQLITE_INSERT_FUNCTION = wx.NewEventType()
+EVT_SQLITE_INSERT_FUNCTION = wx.PyEventBinder(myEVT_SQLITE_INSERT_FUNCTION, 1)
+
+class SQLiteListCtrlPyData():
+    def __init__(self, isRoot=False, isCatalogy=False, isTable=False, isView=False, isIndex=False, isField=False, strTable="", strView="", strField="", strType="", strSchema=""):
+        self._isRoot = isRoot
+        self._isCatalogy = isCatalogy
+        self._isTable = isTable
+        self._isView = isView
+        self._isIndex = isIndex
+        self._isField = isField
+        self._strTable = strTable
+        self._strView = strView
+        self._strField = strField
+        self._strType = strType
+        self._strSchema = strSchema
+        
+    def IsRoot(self):
+        return self._isRoot
+    
+    def IsCatalogy(self):
+        return self._isCatalogy
+    
+    def IsTable(self):
+        return self._isTable
+    
+    def IsView(self):
+        return self._isView
+    
+    def IsIndex(self):
+        return self._isIndex
+    
+    def IsField(self):
+        return self._isField
+    
+    def GetTableText(self):
+        return self._strTable
+    
+    def GetViewText(self):
+        return self._strView
+    
+    def GetFieldText(self):
+        return self._strField
+    
+    def GetTypeText(self):
+        return self._strType
+    
+    def GetSchemaText(self):
+        return self._strSchema
+
 
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
@@ -6316,9 +6595,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                     menu.AppendItem(itemUncheck)
                     itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
                     menu.AppendItem(itemView)
-                    
-                    
-                    
+
                                                                 
                     if self.GetItem(iColumn).GetImage():
                         itemCheck.Enable(False)
@@ -6441,9 +6718,10 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
             self.Select(x, on=0)
 
 
-class SQLiteUIListCtrlStandard(wx.ListCtrl):
+class SQLiteUIListCtrlStandard(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
         self.listSelectedItems = []
         
     def GetAllSelectionIndex(self):
@@ -6457,7 +6735,85 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
     def ClearAllSelection(self):
         for x in xrange(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
-            self.Select(x, on=0) 
+            self.Select(x, on=0)
+
+
+class SQLiteUIHyperTreeListCtrlStandard(HTL.HyperTreeList, listmix.ListCtrlAutoWidthMixin):
+    def __init__(self, *args, **kwargs):
+        HTL.HyperTreeList.__init__(self, *args, **kwargs)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        self.listSelectedItems = []
+        
+    # Override
+    def _doResize(self):
+        """ Resize the last column as appropriate.
+            This method was override to adapt mac ox os
+
+            If the list's columns are too wide to fit within the window, we use
+            a horizontal scrollbar.  Otherwise, we expand the right-most column
+            to take up the remaining free space in the list.
+
+            We remember the current size of the last column, before resizing,
+            as the preferred minimum width if we haven't previously been given
+            or calculated a minimum width.  This ensure that repeated calls to
+            _doResize() don't cause the last column to size itself too large.
+        """
+        
+        if not self:  # avoid a PyDeadObject error
+            return
+
+        if self.GetSize().height < 32:
+            return  # avoid an endless update bug when the height is small.
+        
+        numCols = self.GetColumnCount()
+        if numCols == 0: return  # Nothing to resize.
+
+        if(self._resizeColStyle == "LAST"):
+            resizeCol = self.GetColumnCount()
+        else:
+            resizeCol = self._resizeCol
+
+        resizeCol = max(1, resizeCol)
+
+        if self._resizeColMinWidth == None:
+            self._resizeColMinWidth = self.GetColumnWidth(resizeCol - 1)
+
+        # We're showing the vertical scrollbar -> allow for scrollbar width
+        # NOTE: on GTK, the scrollbar is included in the client size, but on
+        # Windows it is not included
+        listWidth = self.GetClientSize().width
+
+        totColWidth = 0  # Width of all columns except last one.
+        for col in range(numCols):
+            if col != (resizeCol - 1):
+                totColWidth = totColWidth + self.GetColumnWidth(col)
+
+        resizeColWidth = self.GetColumnWidth(resizeCol - 1)  # @UnusedVariable
+
+        if totColWidth + self._resizeColMinWidth > listWidth:
+            # We haven't got the width to show the last column at its minimum
+            # width -> set it to its minimum width and allow the horizontal
+            # scrollbar to show.
+            self.SetColumnWidth(resizeCol - 1, self._resizeColMinWidth)
+            return
+
+        # Resize the last column to take up the remaining available space.
+
+        self.SetColumnWidth(resizeCol - 1, listWidth - totColWidth)
+        
+    def GetAllSelectionIndex(self):
+        for x in xrange(0, self.GetItemCount(), 1):
+            # if not self.GetItem(x).GetImage():
+            self.Select(x, on=0)
+    
+    def ClearAllRows(self):
+        self.DeleteAllItems()
+    
+    def ClearAllSelection(self):
+        for x in xrange(0, self.GetItemCount(), 1):
+            # if not self.GetItem(x).GetImage():
+            self.Select(x, on=0)
+
 
 
 class SQLiteTableUIGridStandard(wx.grid.Grid):
@@ -6472,7 +6828,6 @@ class SQLiteTableUIGridStandard(wx.grid.Grid):
         
         self.Bind(wx.EVT_KEY_DOWN, self.OnTasteKeyDown)
         self.Bind(wx.EVT_KEY_UP, self.OnTasteKeyUp)
-        
     
     def OnTasteKeyDown(self, event):
         if event.KeyCode == wx.WXK_CONTROL:
@@ -6549,8 +6904,6 @@ class SQLMigratePage(wx.Panel):
         self.splitter.SetMinimumPaneSize(20)
         self.splitter.SplitVertically(self.leftPart, self.rightPart, 0)
         # self.splitter.Layout()
-        
-        
         self.btnMigrateLeft2Right = wx.Button(self, label=GetTranslationText(1006, "Migrate left to right"))
         self.btnMigrateRight2Left = wx.Button(self, label=GetTranslationText(1007, "Migrate right to left"))
         
@@ -6579,7 +6932,6 @@ class SQLMigratePage(wx.Panel):
         self.btnMigrateLeft2Right.Bind(wx.EVT_BUTTON, self.OnMigrateLeft2RightClicked)
         self.btnMigrateRight2Left.Bind(wx.EVT_BUTTON, self.OnMigrateRight2LeftClicked)
         
-    
     def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
         30031
@@ -6723,7 +7075,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             if not self.isLeftFocused:
                 self.rightPart.SetBackgroundColour(wx.NullColour)
                 self.rightPart.Refresh()
@@ -6772,7 +7124,7 @@ class SQLMigratePage(wx.Panel):
                 return False
             else:
                 pass
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             if not self.isRightFocused:
                 self.leftPart.SetBackgroundColour(wx.NullColour)
                 self.leftPart.Refresh()
@@ -6825,10 +7177,10 @@ class SQLMigratePage(wx.Panel):
             return "UNKNOWN"
 
     def OnSashChanged(self, event):
-        logger.info("sash changed to %s\n" % str(event.GetSashPosition()))
+        logger.info("sash changed to %s" % str(event.GetSashPosition()))
 
     def OnSashChanging(self, event):
-        logger.info("sash changing to %s\n" % str(event.GetSashPosition()))
+        logger.info("sash changing to %s" % str(event.GetSashPosition()))
     
     def OnLeftPartClicked(self, event):  # @UnusedVariable
         logger.info("on left part, left mouse up....")
@@ -6965,7 +7317,7 @@ class SQLExportPage(wx.Panel):
             table_name = strExpertTable
             yield('BEGIN TRANSACTION;')
         else:
-            pass
+            table_name = strExpertTable
         
         if isCreateCommand:
             q = 'DROP TABLE IF EXISTS "%s";' % table_name;
@@ -7290,7 +7642,7 @@ class SQLImportPage(wx.Panel):
     
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
@@ -7335,21 +7687,37 @@ class SQLPreviewPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
+            fileMask="sqlite (*.SQLite)|*.sqlite|All file (*.*)|*.*",
             changeCallback=self.OnOpenDatabaseCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
-        self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
-        self.listCtrl.InsertColumn(0, GetTranslationText(1015, "Name"))
-        self.listCtrl.InsertColumn(1, GetTranslationText(1016, "Type"))
-        self.listCtrl.SetColumnWidth(0, 600)
-        self.listCtrl.Arrange()
+        self.listCtrl = SQLiteUIHyperTreeListCtrlStandard(self, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=wx.BORDER_NONE | wx.LC_REPORT,
+                 agwStyle=wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.TR_NO_LINES | wx.TR_ROW_LINES | wx.TR_TWIST_BUTTONS | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HIDE_ROOT)
+        self.listCtrl.AddColumn(GetTranslationText(1015, "Name"))
+        self.listCtrl.AddColumn(GetTranslationText(1016, "Type"))
+        self.listCtrl.AddColumn("Schema")
+        pyData = SQLiteListCtrlPyData(isRoot=True)
+        self.nodeRoot = self.listCtrl.AddRoot("", data=pyData)
+        self.listCtrl.setResizeColumn(3)
+        
+        image_list = wx.ImageList(16, 16)
+        self.imgTable = image_list.Add(iconTable.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgView = image_list.Add(iconView.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgIndex = image_list.Add(iconIndex.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgTrigger = image_list.Add(iconTrigger.GetImage().Scale(16, 16).ConvertToBitmap())
+        self.imgType = image_list.Add(iconType.GetImage().Scale(16, 16).ConvertToBitmap())
+        
+        self.listCtrl.AssignImageList(image_list)
         
         #### Sizer, positing the widgets 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
-        self.listCtrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK , self.OnContextMenu)
+        self.listCtrl.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK , self.OnContextMenu)
+        self.Bind(EVT_COMMIT, self.OnSQLChangeCommited)
+        self.Bind(EVT_ROLLBACK, self.OnSQLChangeReverted)
+        self.Bind(EVT_SQLITE_INSERT_FUNCTION, self.OnSQLInsertFunctionClicked)
         
         self.strSQLitePath = ""
         self.conn = None
@@ -7358,6 +7726,22 @@ class SQLPreviewPage(wx.Panel):
         self.newcurs = None
         
         self.SetSizerAndFit(self.sizer)
+        self.sizer.Layout()
+        
+    def OnSQLChangeCommited(self, event):  # @UnusedVariable
+        if self.conn:
+            self.conn.commit()
+        
+    def OnSQLChangeReverted(self, event):  # @UnusedVariable
+        if self.conn:
+            self.conn.rollback()
+            
+    def OnSQLInsertFunctionClicked(self, event):
+        strCodeText = event.GetEventArgs()
+        tempmodule = imp.new_module('tempmodule')
+        exec(strCodeText)  in tempmodule.__dict__
+        functions_list = [o for o in getmembers(tempmodule, isfunction)]
+        a = 0
     
     def OnContextMenu(self, event):
 
@@ -7366,32 +7750,71 @@ class SQLPreviewPage(wx.Panel):
         # Yet another anternate way to do IDs. Some prefer them up top to
         # avoid clutter, some prefer them close to the object of interest
         # for clarity. 
-        iColumn, _dummyX = self.listCtrl.HitTest(event.GetPosition())
+        dummy_obj, _dummy_X, iColumn = self.listCtrl.HitTest(event.GetPoint())
         
         if iColumn != -1:
-            if self.listCtrl.GetSelectedItemCount() == 1:
-                if self.listCtrl.IsSelected(iColumn):
-                    # make a menu
-                    if not hasattr(self, "popupIDView"):
-                        self.popupIDView = wx.NewId()
-                        self.popupIDViewInTab = wx.NewId()
-                        self.popupIDRename = wx.NewId()
-                        self.popupIDDrop = wx.NewId()
-                        self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
-                        self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDViewInTab)
-                        self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
-                        self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
+            if self.listCtrl.IsSelected(event.GetItem()):
+                # make a menu
+                if not hasattr(self, "popupIDView"):
+                    self.popupIDView = wx.NewId()
+                    self.popupIDViewInTab = wx.NewId()
+                    self.popupIDRename = wx.NewId()
+                    self.popupIDDrop = wx.NewId()
                     
-                    menu = wx.Menu()
-                    itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
-                    itemViewInTab = wx.MenuItem(menu, self.popupIDViewInTab, GetTranslationText(1057, "View Table (in single Tab)"))
-                    itemRename = wx.MenuItem(menu, self.popupIDRename, GetTranslationText(1045, "Rename table"))
-                    itemDrop = wx.MenuItem(menu, self.popupIDDrop, GetTranslationText(1047, "Rename table"))
+                    self.popupIDCopyTableName = wx.NewId()
+                    self.popupIDCopyTableSchma = wx.NewId()
+                    self.popupIDCopyTableFieldName = wx.NewId()
+                    self.popupIDCopyTableFieldType = wx.NewId()
+                    self.popupIDCopyTableFieldSchema = wx.NewId()
+                    
+                    self.Bind(wx.EVT_MENU, self.OnMenuViewSelected, id=self.popupIDView)
+                    self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDViewInTab)
+                    self.Bind(wx.EVT_MENU, self.OnMenuRenameSelected, id=self.popupIDRename)
+                    self.Bind(wx.EVT_MENU, self.OnMenuDropSelected, id=self.popupIDDrop)
+                    
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyTableOrViewOrTriggerName, id=self.popupIDCopyTableName)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyTableOrViewOrTriggerSchema, id=self.popupIDCopyTableSchma)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldName, id=self.popupIDCopyTableFieldName)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldType, id=self.popupIDCopyTableFieldType)
+                    self.Bind(wx.EVT_MENU, self.OnMenuCopyFieldSchema, id=self.popupIDCopyTableFieldSchema)
+                    
+                menu = wx.Menu()
+                pyData = event.GetItem().GetData()
+                if pyData.IsTable() or pyData.IsView():
+                    if pyData.IsTable():
+                        itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
+                        itemViewInTab = wx.MenuItem(menu, self.popupIDViewInTab, GetTranslationText(1057, "View Table (in single Tab)"))
+                        itemRename = wx.MenuItem(menu, self.popupIDRename, GetTranslationText(1045, "Rename table"))
+                        itemDrop = wx.MenuItem(menu, self.popupIDDrop, GetTranslationText(1047, "Drop table"))
+                        itemCopyTableName = wx.MenuItem(menu, self.popupIDCopyTableName, "Copy table name")
+                        itemCopyTableSchema = wx.MenuItem(menu, self.popupIDCopyTableSchma, "Copy table schema")
+                    else:
+                        itemView = wx.MenuItem(menu, self.popupIDView, "View the view")
+                        itemViewInTab = wx.MenuItem(menu, self.popupIDViewInTab, "View the view (in single Tab)")
+                        itemRename = wx.MenuItem(menu, self.popupIDRename, "Rename the view")
+                        itemDrop = wx.MenuItem(menu, self.popupIDDrop, "Drop the view")
+                        itemCopyTableName = wx.MenuItem(menu, self.popupIDCopyTableName, "Copy view name")
+                        itemCopyTableSchema = wx.MenuItem(menu, self.popupIDCopyTableSchma, "Copy view schema")
+                    
                     menu.AppendItem(itemView)
                     menu.AppendItem(itemViewInTab)
                     menu.AppendItem(itemRename)
                     menu.AppendItem(itemDrop)
-                    # add some other items
+                    menu.AppendSeparator()
+                    menu.AppendItem(itemCopyTableName)  # Table /View 
+                    menu.AppendItem(itemCopyTableSchema)  # Table /View 
+                    
+                    self.PopupMenu(menu)
+                    menu.Destroy()
+                    event.Skip()
+                elif pyData.IsField():
+                    itemCopyFieldName = wx.MenuItem(menu, self.popupIDCopyTableFieldName, "Copy field name")
+                    itemCopyFieldType = wx.MenuItem(menu, self.popupIDCopyTableFieldType, "Copy field type")
+                    itemCopyFieldSchema = wx.MenuItem(menu, self.popupIDCopyTableFieldSchema, "Copy field schema")
+                    menu.AppendItem(itemCopyFieldName)
+                    menu.AppendItem(itemCopyFieldType)
+                    menu.AppendItem(itemCopyFieldSchema)
+            
                     self.PopupMenu(menu)
                     menu.Destroy()
                     event.Skip()
@@ -7399,12 +7822,12 @@ class SQLPreviewPage(wx.Panel):
                     event.Skip()
             else:
                 event.Skip()
-                
+    
     def OnMenuDropSelected(self, event):  # @UnusedVariable
-        if self.listCtrl.GetSelectedItemCount() == 1:
+        if len(self.listCtrl.GetSelections()) == 1:
             # get old sqlite table name
-            index = self.listCtrl.GetFirstSelected()
-            dropSQliteTable = self.listCtrl.GetItem(index, 0).GetText()
+            itemSelected = self.listCtrl.GetSelection()
+            dropSQliteTable = self.listCtrl.GetSelection().GetText(0)
             
             message = GetTranslationText(1048, 'Please confirm, the selected tables will be dropped： ')
             message += "\n " + dropSQliteTable
@@ -7416,7 +7839,8 @@ class SQLPreviewPage(wx.Panel):
                 if dropSQliteTable != "":
                     # delete sqlite table on list ctrl
                     if self.DropSQLTable(strDropTable=dropSQliteTable):
-                        self.listCtrl.DeleteItem(index)
+                        self.listCtrl.Delete(itemSelected)
+                        self.listCtrl.Refresh()
                         dlg.Destroy()
                         return True
                     else:
@@ -7432,10 +7856,10 @@ class SQLPreviewPage(wx.Panel):
             return False
     
     def OnMenuRenameSelected(self, event):  # @UnusedVariable
-        if self.listCtrl.GetSelectedItemCount() == 1:
+        if len(self.listCtrl.GetSelections()) == 1:
             # get old sqlite table name
-            index = self.listCtrl.GetFirstSelected()
-            oldSqltableName = self.listCtrl.GetItem(index, 0).GetText()
+            itemSelected = self.listCtrl.GetSelection()
+            oldSqltableName = self.listCtrl.GetSelection().GetText(0)
             
             dlg = wx.TextEntryDialog(
                 self, GetTranslationText(1046, 'Please give your the new name of the selected table'),
@@ -7450,7 +7874,9 @@ class SQLPreviewPage(wx.Panel):
                 if newSqltableName.lower() != oldSqltableName.lower():
                     # reset sqlite table on list ctrl
                     if self.RenameSQLTable(newSqltableName, oldSqltableName):
-                        self.listCtrl.SetStringItem(index, 0, newSqltableName)
+                        self.listCtrl.SetItemText(itemSelected, newSqltableName, 0)
+                        self.listCtrl.SetFocus()
+                        self.listCtrl.SelectItem(itemSelected)
                         dlg.Destroy()
                         return True
                     else:
@@ -7469,9 +7895,8 @@ class SQLPreviewPage(wx.Panel):
         """
         30033 #TODO 
         """
-        if self.listCtrl.GetSelectedItemCount() == 1:
-            index = self.listCtrl.GetFirstSelected()
-            sqltable = self.listCtrl.GetItem(index, 0).GetText()
+        if len(self.listCtrl.GetSelections()) == 1:
+            sqltable = self.listCtrl.GetSelection().GetText(0)
             self.GrandParent.ViewTablePage.SetSelectionBitMapComboTablesList(sqltable)
             self.GrandParent.ViewTablePage.OnBitMapComboList(None)
             self.Parent.SetSelection(1)
@@ -7483,47 +7908,264 @@ class SQLPreviewPage(wx.Panel):
         """
         30033 #TODO 
         """
-        if self.listCtrl.GetSelectedItemCount() == 1:
-            index = self.listCtrl.GetFirstSelected()
-            sqltable = self.listCtrl.GetItem(index, 0).GetText()
-            sqltype = self.listCtrl.GetItem(index, 1).GetText()
+        if len(self.listCtrl.GetSelections()) == 1:
+            sqltable = self.listCtrl.GetSelection().GetText(0)
+            sqltype = self.GetTableTypeByTableName(strTable=sqltable)
             idPage = wx.NewId()
-            idTab = self.GrandParent.iNewPreviewPageUniqueID
+            idTab = self.Parent.iNewPreviewPageUniqueID
             strTabName = GetTranslationText(1022, "Preview-Tab") + str(idTab)
-            self.GrandParent.iNewPreviewPageUniqueID += 1
-            self.GrandParent.dictNewPreviewPageInfos[idPage] = {}
-            self.GrandParent.dictNewPreviewPageInfos[idPage]['tab_name'] = strTabName
-            self.GrandParent.dictNewPreviewPageInfos[idPage]['sqltable_name'] = sqltable
-            self.GrandParent.dictNewPreviewPageInfos[idPage]['sqltable_type'] = sqltype
-            self.GrandParent.dictNewPreviewPageInfos[idPage]['sqlite_path'] = self.strSQLitePath
+            self.Parent.iNewPreviewPageUniqueID += 1
+            self.Parent.dictNewPreviewPageInfos[idPage] = {}
+            self.Parent.dictNewPreviewPageInfos[idPage]['tab_name'] = strTabName
+            self.Parent.dictNewPreviewPageInfos[idPage]['sqltable_name'] = sqltable
+            self.Parent.dictNewPreviewPageInfos[idPage]['sqltable_type'] = sqltype
+            self.Parent.dictNewPreviewPageInfos[idPage]['sqlite_path'] = self.strSQLitePath
             newPage = NewPreviewPage(self.Parent, id=idPage, conn=self.conn, curs=self.curs,
                                       sqltable=sqltable, sqlitepath=self.strSQLitePath)
             self.Parent.AddPage(newPage, strTabName, True)
             return True
         else:
             return False
+        
+    def OnMenuCopyTableOrViewOrTriggerName(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsTable():
+            strToCopy = pyData.GetTableText()
+        elif pyData.IsView():
+            strToCopy = pyData.GetViewText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+        
+    def OnMenuCopyTableOrViewOrTriggerSchema(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsTable():
+            strToCopy = pyData.GetSchemaText()
+        elif pyData.IsView():
+            strToCopy = pyData.GetSchemaText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldName(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetFieldText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldType(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetTypeText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
+    
+    def OnMenuCopyFieldSchema(self, event):  # @UnusedVariable
+        """
+        """
+        strToCopy = ""
+        item = self.listCtrl.GetSelection()
+        pyData = item.GetData()
+        if pyData.IsField():
+            strToCopy = pyData.GetSchemaText()
+        else:
+            pass
+        clipdata = wx.TextDataObject()
+        clipdata.SetText(strToCopy)
+        wx.TheClipboard.Open()
+        wx.TheClipboard.SetData(clipdata)
+        wx.TheClipboard.Close()
 
     def OnOpenDatabaseCallBacked(self, event):
         if event:
-            logger.info('DirBrowseButton: %s\n' % event.GetString())
+            logger.info('DirBrowseButton: %s' % event.GetString())
             self.strSQLitePath = event.GetString()
             try:
+                global DEFAULT_AUTOCOMPLETE_WORDS_LIST
+                DEFAULT_AUTOCOMPLETE_WORDS_LIST = []
                 self.conn = sqlite3.connect(database=self.strSQLitePath)
                 self.curs = self.conn.cursor()
+                # pass params to view page
                 self.GrandParent.ViewTablePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
-                self.curs.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                # pass params to execute page
+                self.GrandParent.ExecutePage.SetDatabaseParams(self.conn, self.curs, self.strSQLitePath)
+                # TABLES 
+                self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='table';")
                 listOfTuple = self.curs.fetchall()
                 if not listOfTuple:
                     pass
                 else:
-                    self.listCtrl.DeleteAllItems()
+                    self.listCtrl.DeleteChildren(self.nodeRoot)
                     listOfTables = map(lambda lt : lt[0] , listOfTuple)
                     self.GrandParent.ViewTablePage.InitBitMapComboTablesList(listOfTables)
-                    for strTable in listOfTables:
-                        self.listCtrl.Append([strTable, self.GetTableTypeByTableName(strTable=strTable)])
-                    self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                    self.nodeRootTables = self.listCtrl.AppendItem(self.nodeRoot, "Tables (%s)" % len(listOfTables))
+                    pyData = SQLiteListCtrlPyData(isCatalogy=True)
+                    self.listCtrl.SetPyData(self.nodeRootTables, pyData)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, -1, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootTables, -1, which=wx.TreeItemIcon_Expanded)
+                    num = 0
+                    for tupleTable in listOfTuple:
+                        child = self.listCtrl.AppendItem(self.nodeRootTables, tupleTable[0])
+                        DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(tupleTable[0])
+                        if (num % 2) == 0:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
+                        else:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.NullColour)
+                        strSchema = tupleTable[1].replace('\n', " ")
+                        pyData = SQLiteListCtrlPyData(isTable=True, strTable=tupleTable[0], strSchema=strSchema)
+                        self.listCtrl.SetPyData(child, pyData)
+                        # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
+                        self.listCtrl.SetItemText(child, strSchema, 2)
+                        self.listCtrl.SetItemImage(child, self.imgTable)
+                        strFieldType = strSchema[strSchema.find("(") + 1: (len(strSchema) - strSchema[::-1].find(")") - 1)]
+                        listTypes = strFieldType.split(",")
+                        if not listTypes:
+                            pass
+                        else:
+                            jnum = 0
+                            for itemOfTypes in listTypes:  #
+                                typeTypes = filter(None, itemOfTypes.split(" "))
+                                grandson = self.listCtrl.AppendItem(child, typeTypes[0])
+                                if not typeTypes[0] in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+                                    DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(typeTypes[0])
+                                if (num % 2) == 0:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                else:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                if len(typeTypes) == 1:  # warning, means the filed has no type definition 
+                                    self.listCtrl.SetItemText(grandson, 'UNDEFINED', 1)  # use TEXT as default
+                                    strSchema = "`%s`  %s" % (typeTypes[0], "UNDEFINED")
+                                    self.listCtrl.SetItemText(grandson, strSchema, 2)
+                                    pyData = SQLiteListCtrlPyData(isField=True, strField=typeTypes[0], strType="UNDEFINED", strSchema=strSchema)
+                                    
+                                else:
+                                    self.listCtrl.SetItemText(grandson, typeTypes[1], 1)
+                                    strSchema = "`%s`  %s" % (typeTypes[0], ' '.join(typeTypes[1:]))
+                                    self.listCtrl.SetItemText(grandson, strSchema, 2)
+                                    pyData = SQLiteListCtrlPyData(isField=True, strField=typeTypes[0], strType=typeTypes[1], strSchema=strSchema)
+                                self.listCtrl.SetPyData(grandson, pyData)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
+                                jnum += 1
+                            # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                        num += 1
+                
+                # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                self.listCtrl.SetColumnWidth(0, 200)
+                # self.listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+                self.listCtrl.Expand(self.nodeRootTables)
+                # VIEWS 
+                # self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                # PRAGMA table_info(test_bbbb);
+                # add the first sql tab
+                self.curs.execute("SELECT name, sql FROM sqlite_master WHERE type='view';")
+                listOfTuple = self.curs.fetchall()
+                if not listOfTuple:
+                    pass
+                else:
+                    listOfViews = map(lambda lt : lt[0] , listOfTuple)
+                    self.nodeRootViews = self.listCtrl.AppendItem(self.nodeRoot, "Views (%s)" % len(listOfViews))
+                    pyData = SQLiteListCtrlPyData(isCatalogy=True)
+                    self.listCtrl.SetPyData(self.nodeRootViews, pyData)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, -1, which=wx.TreeItemIcon_Normal)
+                    self.listCtrl.SetItemImage(self.nodeRootViews, -1, which=wx.TreeItemIcon_Expanded)
+                    num = 0
+                    for tupleView in listOfTuple:
+                        child = self.listCtrl.AppendItem(self.nodeRootViews, tupleView[0])
+                        DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(tupleView[0])
+                        if (num % 2) == 0:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.WHITE)
+                        else:
+                            self.listCtrl.SetItemBackgroundColour(child, wx.NullColour)
+                        strSchema = tupleView[1].replace('\n', " ")
+                        pyData = SQLiteListCtrlPyData(isView=True, strView=tupleView[0], strSchema=strSchema)
+                        self.listCtrl.SetPyData(child, pyData)
+                        # self.listCtrl.SetItemText(child, self.GetTableTypeByTableName(strTable=tupleTable[0]), 1)
+                        self.listCtrl.SetItemText(child, strSchema, 2)
+                        self.listCtrl.SetItemImage(child, self.imgView)
+                        # type of view
+                        self.curs.execute("PRAGMA table_info(%s);" % tupleView[0])
+                        listTypesOfView = self.curs.fetchall()
+                        # Index, filed_name, type, Not null, Default value, PRIMARY  key
+                        if not listTypesOfView:
+                            pass
+                        else:
+                            jnum = 0
+                            for itemOfTypes in listTypesOfView:  #
+                                grandson = self.listCtrl.AppendItem(child, itemOfTypes[1])
+                                if not itemOfTypes[1] in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+                                    DEFAULT_AUTOCOMPLETE_WORDS_LIST.append(itemOfTypes[1])
+                                if (num % 2) == 0:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                else:
+                                    if (jnum % 2) == 0:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.WHITE)
+                                    else:
+                                        self.listCtrl.SetItemBackgroundColour(grandson, wx.NullColour)
+
+                                if len(itemOfTypes) == 1:  # warning, means the filed has no type definition 
+                                    self.listCtrl.SetItemText(grandson, 'UNDEFINED', 1)  # use TEXT as default
+                                    strSchema = "`%s`  %s" % (itemOfTypes[0], "UNDEFINED")
+                                    self.listCtrl.SetItemText(grandson, strSchema, 2)
+                                    pyData = SQLiteListCtrlPyData(isField=True, strField=itemOfTypes[0], strType="UNDEFINED", strSchema=strSchema)
+                                else:
+                                    self.listCtrl.SetItemText(grandson, itemOfTypes[2], 1)
+                                    strSchema = "`%s`  %s " % (itemOfTypes[1], itemOfTypes[2])
+                                    self.listCtrl.SetItemText(grandson, strSchema, 2)
+                                    pyData = SQLiteListCtrlPyData(isField=True, strField=itemOfTypes[0], strType=itemOfTypes[1], strSchema=strSchema)
+                                self.listCtrl.SetPyData(grandson, pyData)
+                                self.listCtrl.SetItemImage(grandson, self.imgType)
+                                jnum += 1
+                            # self.listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+                        num += 1
+                
+                self.GrandParent.ExecutePage.AddTheFirstSQLTabPage()
                 return True
-            except:
+            except Exception as e:  # @UnusedVariable
+                if DEBUG_STDOUT: print e
                 return False
         else:
             return False
@@ -7818,7 +8460,6 @@ class SQLViewTablePage(wx.Panel):
     
         dlg.Destroy()
         event.Skip()
-        
               
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -7840,7 +8481,6 @@ class SQLViewTablePage(wx.Panel):
         wx.TheClipboard.SetData(clipdata)
         wx.TheClipboard.Close()
         event.Skip()
-        
         
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -7987,14 +8627,13 @@ class SQLViewTablePage(wx.Panel):
         for row in query_res:
             yield("%s;" % row[0])
             
-    
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
         # Build the insert statement for each row of the current table
         res = self.curs.execute("DELETE FROM %s WHERE  unique_index = %s" % (self.sqltable, indexOfDelete))
         self.conn.commit()
         return res
-    
+
 
 class SQLExecuteSQLPage(wx.Panel):
     def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
@@ -8004,6 +8643,9 @@ class SQLExecuteSQLPage(wx.Panel):
         self.curs = None
         self.sqlitepath = ""
         self.sqltable = ""
+        
+        self.iUidSqlPage = 0
+        self.bDatabaseIsReady = False
         
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         ##### image buttons
@@ -8049,14 +8691,188 @@ class SQLExecuteSQLPage(wx.Panel):
         
         ##### note book
         self.MySQLNotebook = FNB.FlatNotebook(self, wx.ID_ANY, agwStyle=FNB.FNB_NODRAG)
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 1")
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 2")
-        tab = SQLNotebookTab(self.MySQLNotebook)
-        self.MySQLNotebook.AddPage(tab, "SQL 3")
+        # tab = SQLNotebookTab(self.MySQLNotebook)
+        # self.MySQLNotebook.AddPage(tab, "SQL 1")
+        # tab = SQLNotebookTab(self.MySQLNotebook)
+        # self.MySQLNotebook.AddPage(tab, "SQL 2")
+        
         self.sizer.Add(self.MySQLNotebook, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizerAndFit(self.sizer)
+        
+        self.BitMapButtonAddTab.Bind(wx.EVT_BUTTON, self.OnImgBtnTabOpenClicked)
+        self.BitMapButtonOpenSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnOpenSQLClicked)
+        self.BitMapButtonSaveSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnSaveSQLClicked)
+        self.BitMapButtonPlaySQL.Bind(wx.EVT_BUTTON, self.OnImgBtnPlaySQLClicked)
+        self.BitMapButtonStepSQL.Bind(wx.EVT_BUTTON, self.OnImgBtnStepSQLClicked)
+    
+    def AddTheFirstSQLTabPage(self):
+        self.bDatabaseIsReady = False
+        if self.MySQLNotebook.GetPageCount() == 0:
+            tab = SQLNotebookTab(self.MySQLNotebook)
+            self.MySQLNotebook.AddPage(tab, "SQL 1")
+            self.bDatabaseIsReady = True
+        else:
+            self.bDatabaseIsReady = True
+            
+    def ConnectSQLite(self):
+        try:
+            if self.conn == None or self.curs == None:
+                self.conn = sqlite3.connect(self.sqlitepath)
+                self.curs = self.conn.cursor()
+                return True
+            else:
+                return True
+        except:
+            return False
+    
+    def SetDatabaseParams(self, conn=None, curs=None, sqlitepath=""):
+        self.conn = conn
+        self.curs = curs
+        self.sqlitepath = sqlitepath
+        self.ConnectSQLite()
+        
+    def OnImgBtnTabOpenClicked(self, event):  # @UnusedVariable
+        if self.bDatabaseIsReady:
+            if self.iUidSqlPage == 0:
+                self.iUidSqlPage = self.MySQLNotebook.GetPageCount() + 1
+            else:
+                self.iUidSqlPage += 1
+            strNewTabName = "SQL %s" % self.iUidSqlPage
+            tab = SQLNotebookTab(self.MySQLNotebook)
+            self.MySQLNotebook.AddPage(tab, strNewTabName)
+        else:
+            pass
+        
+    def OnImgBtnOpenSQLClicked(self, event):  # @UnusedVariable
+        dlg = wx.FileDialog(
+            self, message="Please select a SQL file",
+            defaultDir=os.getcwd(),
+            defaultFile="",
+            wildcard="SQL file (*.sql) | *.sql",
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+        if dlg.ShowModal() == wx.ID_OK:
+            if dlg.GetPath() != "":
+                iSelected = self.MySQLNotebook.GetSelection()
+                pageSelected = self.MySQLNotebook.GetPage(iSelected)
+                pageSelected.STCSQLCommands.Clear()
+                logger.info("The selected Path : " + dlg.GetPath())
+                sqlines = [""]
+                with open(dlg.GetPath(), "r") as sql:
+                    sqlines = sql.readlines()
+                    sql.close()
+                strAllLines = "".join(sqlines)
+                pageSelected.STCSQLCommands.ChangeValue(strAllLines)
+        else:
+            pass
+        
+    def OnImgBtnSaveSQLClicked(self, event):  # @UnusedVariable
+        with wx.FileDialog(self, "Save SQL file", wildcard="SQL files (*.sql)|*.sql",
+                       style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+    
+            # save the current contents in the file
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'w') as file:  # @ReservedAssignment
+                    self.doSaveData(file)
+            except IOError:
+                wx.LogError("Cannot save current data in file '%s'." % pathname)
+
+    def OnImgBtnPlaySQLClicked(self, event):  # @UnusedVariable
+        iSelected = self.MySQLNotebook.GetSelection()
+        pageSelected = self.MySQLNotebook.GetPage(iSelected)
+        strAllText = pageSelected.STCSQLCommands.GetText()
+        logger.info(strAllText)
+        sqlines = strAllText.split(";")
+        try:
+            # Reset marker at the first line
+            pageSelected.STCSQLCommands.MarkerDeleteAll(0)
+            pageSelected.STCSQLCommands.MarkerAdd(0, 0)
+            for idx, sql in enumerate(sqlines):
+                strCurLine = sql.strip(';\t\n\r')
+                # set the current line marker
+                pageSelected.STCSQLCommands.MarkerDeleteAll(0)
+                pageSelected.STCSQLCommands.MarkerAdd(idx, 0)
+                # select distinct field_name from table
+                t1 = time.time()
+                self.curs.execute(strCurLine)
+                # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
+                rtsSQLQuery = self.curs.fetchall()
+                t2 = time.time()
+                listRowsValues = []
+                if any(rtsSQLQuery):
+                    # not empty
+                    # (('field_type', None, None, None, None, None, None),)
+                    rtsQueryScheme = self.curs.description
+                    # 1. prepare col for result grid control
+                    info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
+                    pageSelected.InitListCtrlColumns(info_tables)
+                    # 2. prepare row for result grid control
+                    listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
+                    pageSelected.InitListCtrlColumnsValues(listRowsValues)
+                    # 3. reports
+                    # xxx rows returned in 4ms from: sql query
+                    # xxx Reihen innerhalb von 282ms zurueckgegeben von: sql query
+                pageSelected.TCSQLExecutedInfo.Clear()
+                if any(listRowsValues):
+                    logger.info("Get report: %d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+                    pageSelected.TCSQLExecutedInfo.ChangeValue("%d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+                else:
+                    # Query executed successfully:
+                    logger.info("Query executed successfully in %.1fms : %s" % ((t2 - t1) * 1000, strCurLine))
+                    pageSelected.TCSQLExecutedInfo.ChangeValue("Query executed successfully in %.1fms : %s" % ((t2 - t1) * 1000, strCurLine))
+            return True
+        except sqlite3.OperationalError as e:  # @UnusedVariable
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
+            return False
+        except Exception as e:  # @UnusedVariable
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
+            return False
+    
+    def OnImgBtnStepSQLClicked(self, event):  # @UnusedVariable
+        iSelected = self.MySQLNotebook.GetSelection()
+        pageSelected = self.MySQLNotebook.GetPage(iSelected)
+        pageSelected.TCSQLExecutedInfo.Clear()
+        strCurLine, dummy_line_nr = pageSelected.STCSQLCommands.GetCurLine()
+        logger.info("Get input message: " + strCurLine)
+        try:
+            strCurLine = strCurLine.strip(';\t\n\r')
+            # select distinct field_name from table
+            t1 = time.time()
+            self.curs.execute(strCurLine)
+            # [(1000,), (3000,), (10000,), (12000,), (4005,), (8014,), (11004,)]
+            rtsSQLQuery = self.curs.fetchall()
+            t2 = time.time()
+            if any(rtsSQLQuery):
+                # not empty
+                # (('field_type', None, None, None, None, None, None),)
+                rtsQueryScheme = self.curs.description
+                # 1. prepare col for result grid control
+                info_tables = map(lambda lt: lt[0:2], rtsQueryScheme)
+                pageSelected.InitListCtrlColumns(info_tables)
+                # 2. prepare row for result grid control
+                listRowsValues = map(lambda lt: filter(None, lt), rtsSQLQuery)
+                pageSelected.InitListCtrlColumnsValues(listRowsValues)
+            # 3. reports
+            # xxx rows returned in 4ms from: sql query
+            # xxx Reihen innerhalb von 282ms zurueckgegeben von: sql query
+            logger.info("Get report: %d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue("%d rows returned in %.1fms from: %s" % (len(listRowsValues), (t2 - t1) * 1000, strCurLine))
+            return True
+        except sqlite3.OperationalError as e:
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
+            return False
+        except Exception as e:
+            pageSelected.TCSQLExecutedInfo.Clear()
+            pageSelected.TCSQLExecutedInfo.ChangeValue(e.message)
+            return False
 
 
 class SQLNotebookTab(wx.Panel):
@@ -8069,6 +8885,7 @@ class SQLNotebookTab(wx.Panel):
         self.TabPanelSplitterWin = MultiSplitterWindow(self, wx.ID_ANY,
                                style=wx.SP_LIVE_UPDATE)
         
+        self.TabPanelSplitterWin.SetMinimumPaneSize(20)
         # sty = wx.BORDER_NONE
         # sty = wx.BORDER_SIMPLE
         # wx.BORDER_SUNKEN
@@ -8076,9 +8893,12 @@ class SQLNotebookTab(wx.Panel):
         self.vSizerWinSQLCommands = wx.BoxSizer(wx.VERTICAL)
         self.hSizerWinSQLCommands = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLCommands = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
-        self.WinSQLCommands.SetBackgroundColour("pink")
+        self.WinSQLCommands.SetBackgroundColour("red")
         self.STCSQLCommands = stc.StyledTextCtrl(self.WinSQLCommands, wx.ID_ANY)
+        self.STCSQLCommands.metadata = None  # dict of uuid, origin for line tracking
+        self.STCSQLCommands.clipboard = None  # lines text and metadata for cut/paste
         self.STCSQLCommands.EmptyUndoBuffer()
+        # self.STCSQLCommands.clipboard = wx.TheClipboard()
         # set keywords list
         self.STCSQLCommands.SetLexer(stc.STC_LEX_SQL) 
         self.STCSQLCommands.SetKeyWords(0, " ".join(DEFAULT_SQLITE_KEY_WORDS_LIST))
@@ -8088,30 +8908,45 @@ class SQLNotebookTab(wx.Panel):
         # set styles
         self.STCSQLCommands.StyleClearAll()  # Reset all to be like the default
         self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
-        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 2, face1))
-        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb - 1, face1))
+        self.STCSQLCommands.StyleSetSpec(stc.STC_SQL_WORD, "fore:#00007F,bold,size:%d" % (pb + 1))
+        self.STCSQLCommands.StyleSetCase(stc.STC_SQL_WORD, stc.STC_CASE_UPPER)
+        self.STCSQLCommands.MarkerDefine(0, stc.STC_MARK_SHORTARROW, "#00FF00", "#00FF00")
+        self.STCSQLCommands.MarkerAdd(0, 0)
         # bind events
         self.STCSQLCommands.Bind(stc.EVT_STC_DO_DROP, self.OnSTCDoDrop)
         self.STCSQLCommands.Bind(stc.EVT_STC_DRAG_OVER, self.OnSTCDragOver)
         self.STCSQLCommands.Bind(stc.EVT_STC_START_DRAG, self.OnSTCStartDrag)
         self.STCSQLCommands.Bind(stc.EVT_STC_MODIFIED, self.OnSTCModified)
         self.STCSQLCommands.Bind(wx.EVT_WINDOW_DESTROY, self.OnSTCDestroy)
+        self.STCSQLCommands.Bind(wx.EVT_KEY_DOWN, self.OnSTCKeyDown)
+        self.STCSQLCommands.Bind(wx.EVT_KEY_UP, self.OnSTCKeyUp)
+        self.STCSQLCommands.Bind(wx.EVT_LEFT_UP, self.OnSTCMouseUp)
+        self.STCSQLCommands.Bind(wx.EVT_CHAR, self.OnSTCChar)
         self.hSizerWinSQLCommands.Add(self.STCSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
         self.vSizerWinSQLCommands.Add(self.hSizerWinSQLCommands, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
         self.WinSQLCommands.SetSizerAndFit(self.vSizerWinSQLCommands)
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLCommands, 125)
         
         # part 2, for sql results
+        self.vSizerWinSQLResults = wx.BoxSizer(wx.VERTICAL)
+        self.hSizerWinSQLResults = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLResults = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
-        self.WinSQLResults.SetBackgroundColour("sky blue")
-        wx.StaticText(self.WinSQLResults, -1, "Panel Two", (5, 5))
+        # self.WinSQLResults.SetBackgroundColour("sky blue")
+        self.MyResultGrid = SQLiteTableUIGridStandard(self.WinSQLResults, style=wx.LC_REPORT)
+        # self.MyGrid.SetBackgroundColour(wx.RED)
+        self.MyResultGrid.CreateGrid(0, 0)
+        self.MyResultGrid.SetRowLabelSize(0)
+        self.hSizerWinSQLResults.Add(self.MyResultGrid, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.vSizerWinSQLResults.Add(self.hSizerWinSQLResults, proportion=1, flag=wx.ALL | wx.EXPAND, border=0)
+        self.WinSQLResults.SetSizerAndFit(self.vSizerWinSQLResults)
         self.TabPanelSplitterWin.AppendWindow(self.WinSQLResults, 125)
         
         # part 3, for sql executed info
         self.hSizerSQLExecutedInfo = wx.BoxSizer(wx.HORIZONTAL)
         self.WinSQLExecutedInfo = wx.Window(self.TabPanelSplitterWin, style=wx.BORDER_SUNKEN)
         # self.WinSQLExecutedInfo.SetBackgroundColour("green")
-        self.TCSQLExecutedInfo = wx.TextCtrl(self.WinSQLExecutedInfo, -1, "Panel Three", (5, 5))
+        self.TCSQLExecutedInfo = wx.TextCtrl(self.WinSQLExecutedInfo, -1, "", (5, 5))
         # self.TCSQLExecutedInfo.SetBackgroundColour("red")
         self.hSizerSQLExecutedInfo.Add(self.TCSQLExecutedInfo, proportion=1, flag=wx.EXPAND | wx.ALL, border=0)
         img = iconTableViewSave.GetImage()
@@ -8132,74 +8967,182 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnMSPChanged)
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
-
-    def OnMSPChanging(self, evt):
-        logger.info("Changing sash:%d  %s\n" % (evt.GetSashIdx(), evt.GetSashPosition()))
-        iSashPosition = evt.GetSashPosition()
+    def OnMSPChanging(self, event):
+        logger.info("Changing sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()))
+        iSashPosition = event.GetSashPosition()
         sizeCurrentTab = self.TabPanelSplitterWin.GetSize()
-        if evt.GetSashIdx() == 1:
+        if event.GetSashIdx() == 1:
             iFirstSashPostion = self.TabPanelSplitterWin.GetSashPosition(0)
-            if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 40:
-                evt.Veto()
+            if sizeCurrentTab[1] - (iSashPosition + iFirstSashPostion) < 80:
+                event.Veto()
             else:
-                evt.Skip()
+                event.Skip()
+        else:
+            iSecondSashPostion = self.TabPanelSplitterWin.GetSashPosition(1)
+            if sizeCurrentTab[1] - (iSashPosition + iSecondSashPostion) < 80:
+                if (iSashPosition - iSecondSashPostion) > 80 and iSecondSashPostion > 80:
+                    self.TabPanelSplitterWin.SetSashPosition(1, iSecondSashPostion)
+                    event.Veto()
+                else:
+                    event.Veto()
+            else:
+                event.Skip()
         
-
-    def OnMSPChanged(self, evt):
-        logger.info("Changed sash:%d  %s" % (evt.GetSashIdx(), evt.GetSashPosition()))
+    def OnMSPChanged(self, event):
+        logger.info("Changed sash:%d  %s" % (event.GetSashIdx(), event.GetSashPosition()))
     
-    def OnSTCDestroy(self, evt):
+    def OnSTCDestroy(self, event):
         # This is how the clipboard contents can be preserved after
         # the app has exited.
         wx.TheClipboard.Flush()
-        evt.Skip()
+        event.Skip()
 
-
-    def OnSTCStartDrag(self, evt):
-        logger.info("OnStartDrag: %d, %s" \
-                       % (evt.GetDragAllowMove(), evt.GetDragText()))
-
-        if evt.GetPosition() < 250:
-            evt.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
-            evt.SetDragText("DRAGGED TEXT")  # you can change what is dragged
-            # evt.SetDragText("")             # or prevent the drag with empty text
-
-
-    def OnSTCDragOver(self, evt):
+    def OnSTCStartDrag(self, event):
         logger.info("OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
-            % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult()))
+            % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult()))
 
-        if evt.GetPosition() < 250:
-            evt.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
+        if event.GetPosition() < 250:
+            event.SetDragAllowMove(False)  # you can prevent moving of text (only copy)
+            event.SetDragText("DRAGGED TEXT")  # you can change what is dragged
+            # event.SetDragText("")             # or prevent the drag with empty text
 
+    def OnSTCDragOver(self, event):
+        if DEBUG_STDOUT: print "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
+            % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult())
 
-    def OnSTCDoDrop(self, evt):
+        if event.GetPosition() < 250:
+            event.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
+
+    def OnSTCDoDrop(self, event):
         logger.info("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
                        "\ttext: %s" \
-                       % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
-                          evt.GetDragText()))
+                       % (event.GetX(), event.GetY(), event.GetPosition(), event.GetDragResult(),
+                          event.GetDragText()))
 
-        if evt.GetPosition() < 500:
-            evt.SetDragText("DROPPED TEXT")  # Can change text if needed
-            # evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
+        if event.GetPosition() < 500:
+            event.SetDragText("DROPPED TEXT")  # Can change text if needed
+            # event.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
             # is probably better to do it in OnDragOver so
             # there is visual feedback
             
-            # evt.SetPosition(25)             # Can also change position, but I'm not sure why
+            # event.SetPosition(25)             # Can also change position, but I'm not sure why
             # you would want to...
+            
+    def OnSTCKeyDown(self, event):
+        key = event.GetKeyCode()
+        control = event.ControlDown()
+        # shift=event.ShiftDown()
+        alt = event.AltDown()
+  
+        if key == wx.WXK_SPACE and control and not self.STCSQLCommands.AutoCompActive():
+            self.AutoComplete()
+        elif key == ord('X') and control and not alt:
+            self.OnSTCCut()
+        elif key == ord('C') and control and not alt:
+            self.OnSTCCopy()
+        elif key == ord('V') and control and not alt:
+            self.OnSTCPaste()
+        else:
+            event.Skip()
     
-    def OnSTCModified(self, evt):
+    def OnSTCKeyUp(self, event):
+        iLineNr = event.GetEventObject().GetCurrentLine()
+        if event.GetEventObject().MarkerGet(iLineNr):
+            event.Skip()
+        else:
+            event.GetEventObject().MarkerDeleteAll(0)
+            event.GetEventObject().MarkerAdd(iLineNr, 0)
+            event.Skip()
+    
+    def OnSTCMouseUp(self, event):
+        iLineNr = event.GetEventObject().GetCurrentLine()
+        if event.GetEventObject().MarkerGet(iLineNr):
+            event.Skip()
+        else:
+            event.GetEventObject().MarkerDeleteAll(0)
+            event.GetEventObject().MarkerAdd(iLineNr, 0)
+            event.Skip()
+    
+    def OnSTCChar(self, event):
+        key = event.GetKeyCode()
+        control = event.ControlDown()
+        alt = event.AltDown()
+        # GF We avoid an error while evaluating chr(key), next line.
+        if key > 255 or key < 0:
+            event.Skip()
+        # GF No keyboard needs control or alt to make '(', ')' or '.'
+        # GF Shift is not included as it is needed in some keyboards.
+        elif chr(key) in ['(', ')', '.'] and not control and not alt:
+            if key == ord('('):
+                self.STCSQLCommands.AddText('(')
+            elif key == ord(')'):
+                # ) end tips
+                self.STCSQLCommands.AddText(')')
+            elif key == ord('.'):
+                # . Code completion
+                self.AutoComplete(obj=1)
+            else:
+                event.Skip()
+        else:
+            event.Skip()
+    
+    def OnSTCModified(self, event):
         logger.info("""OnModified \
         Mod type:     %s \
         At position:  %d \
         Lines added:  %d \
         Text Length:  %d \
-        Text:         %s""" % (self.TransModTypeOfSTC(evt.GetModificationType()),
-                                  evt.GetPosition(),
-                                  evt.GetLinesAdded(),
-                                  evt.GetLength(),
-                                  repr(evt.GetText())))
+        Text:         %s""" % (self.TransModTypeOfSTC(event.GetModificationType()),
+                                  event.GetPosition(),
+                                  event.GetLinesAdded(),
+                                  event.GetLength(),
+                                  repr(event.GetText())))
+        
+        strWord = self.GetWord()
+        logger.error("Get word :" + strWord)
+        if len(strWord) < 3:
+            return
+        if strWord in DEFAULT_SQLITE_KEY_WORDS_LIST:
+            return 
+        if strWord in str(DEFAULT_AUTOCOMPLETE_WORDS_LIST):
+            self.AutoComplete()
+        else:
+            pass
+        
+    def OnSTCCut(self):
+        "Override default Cut to track lines using an internal clipboard"
+        start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
+        end = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionEnd())
+        # store the uuids and line text to check on pasting:
+        original_text_lines = [self.GetLineText(i + 1) for i in range(start, end)]
+        self.STCSQLCommands.clipboard = original_text_lines, self.STCSQLCommands.metadata[start:end]
+        # call the default method:
+        return stc.StyledTextCtrl.Cut(self.STCSQLCommands)
 
+    def OnSTCCopy(self):
+        "Override default Copy to track lines using an internal clipboard"
+        # just clean internal clipboard as lines will be new when pasted
+        self.STCSQLCommands.clipboard = None
+        return stc.StyledTextCtrl.Copy(self.STCSQLCommands)
+        
+    def OnSTCPaste(self):
+        "Override default Paste to track lines using an internal clipboard"
+        start = self.STCSQLCommands.LineFromPosition(self.STCSQLCommands.GetSelectionStart())
+        ret = stc.StyledTextCtrl.Paste(self.STCSQLCommands)
+        # only restore uuids if text is the same (not copied from other app):
+        if self.STCSQLCommands.clipboard:
+            original_text_lines, metadata_saved = self.STCSQLCommands.clipboard
+            end = start + len(metadata_saved)
+            new_text_lines = [self.STCSQLCommands.GetLineText(i + 1) for i in range(start, end)]
+            if metadata_saved and original_text_lines == new_text_lines:
+                # #if DEBUG_STDOUT: print "restoring", start, metadata_saved
+                self.STCSQLCommands.metadata[start:end] = metadata_saved
+                self.STCSQLCommands.STCSQLCommands.clipboard = None
+        return ret
+        
+    def OnSTCUndo(self):
+        logger.info("UNDO!")
+        
     def TransModTypeOfSTC(self, modType):
         st = ""
         table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
@@ -8221,9 +9164,120 @@ class SQLNotebookTab(wx.Panel):
 
         if not st:
             st = 'UNKNOWN'
-
         return st
+    
+    def DoBuiltIn(self, event):
+        evtid = event.GetId()
+        if evtid == wx.ID_COPY:
+            self.Copy()
+        elif evtid == wx.ID_PASTE:
+            self.Paste()
+        elif evtid == wx.ID_CUT:
+            self.Cut()
+        elif evtid == wx.ID_DELETE:
+            self.CmdKeyExecute(stc.STC_CMD_CLEAR)
+        elif evtid == wx.ID_UNDO:
+            self.CmdKeyExecute(stc.STC_CMD_UNDO)
+        elif evtid == wx.ID_REDO:
+            self.CmdKeyExecute(stc.STC_CMD_REDO)
+    
+    def AutoComplete(self, obj=0):
+        if obj:
+            self.STCSQLCommands.AddText('.')
+            word = ''
+        else:
+            word = self.GetWord()
+        
+        words = []
+        for autoWord in DEFAULT_AUTOCOMPLETE_WORDS_LIST:
+            if word in str(autoWord):
+                words.append(str(autoWord))
+        if len(words) > 1:
+            self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
+        elif not word in words:
+            self.STCSQLCommands.AutoCompShow(len(word), " ".join(words))
+        else:
+            pass
+    
+    def GetWord(self, whole=None, pos=None):
+        """
+        """
+        for delta in (0, -1, 1):
+            word = self._GetWord(whole=whole, delta=delta, pos=pos)
+            if word: return word
+        return ''
 
+    def _GetWord(self, whole=None, delta=0, pos=None):
+        """
+        """
+        if pos is None:
+            pos = self.STCSQLCommands.GetCurrentPos() + delta
+            line = self.STCSQLCommands.GetCurrentLine()
+        else:
+            line = self.STCSQLCommands.LineFromPosition(pos)
+        linepos = self.STCSQLCommands.PositionFromLine(line)
+        txt = self.STCSQLCommands.GetLine(line)
+        start = self.STCSQLCommands.WordStartPosition(pos, 1)
+        if whole:
+            end = self.STCSQLCommands.WordEndPosition(pos, 1)
+        else:
+            end = pos
+        return txt[start - linepos:end - linepos]
+    
+    
+    def InitListCtrlColumns(self, info_tables):
+        # 1. clear the grid / reset the grid
+        self.MyResultGrid.ClearGrid()
+        # 2. delete all rows
+        if self.MyResultGrid.GetNumberRows() > 0:
+            self.MyResultGrid.DeleteRows(0, self.MyResultGrid.GetNumberRows())
+        # 3. delete all columns
+        if self.MyResultGrid.GetNumberCols() > 0:
+            self.MyResultGrid.DeleteCols(0, self.MyResultGrid.GetNumberCols())
+        numberColumns = len(info_tables)
+        self.MyResultGrid.AppendCols(numberColumns)
+        self.MyResultGrid.SetRowLabelSize(40)
+        for index, info_column in enumerate(info_tables):
+            attr = wx.grid.GridCellAttr()
+            strLable = info_column[0]
+            strType = info_column[1]  # @UnusedVariable
+            if strType:
+                colorBack, colorFor = self.GetColumnColor(strType)
+                attr.SetBackgroundColour(colorBack)
+                attr.SetTextColour(colorFor)
+            self.MyResultGrid.SetColLabelValue(index, strLable)
+            attr.SetReadOnly(True)
+            self.MyResultGrid.SetColAttr(index, attr)
+        # self.MyResultGrid.Arrange()
+    
+    def InitListCtrlColumnsValues(self, listRowsValues):
+        wait = wx.BusyCursor()
+        try:
+            iRow = 0
+            for listValues in listRowsValues:
+                self.MyResultGrid.AppendRows(1)
+                for iColumn, value in enumerate(map(str, listValues)):
+                    self.MyResultGrid.SetCellValue(iRow, iColumn, value)
+                iRow += 1
+        except:
+            pass
+        del wait
+    
+    def GetColumnColor(self, strType=""):
+        if "int" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['INT']
+        elif "char" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['TEXT']
+        elif "text" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['TEXT']
+        elif "blob" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['BLOB']
+        elif "float" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['REAL']
+        elif "real" in strType.lower():
+            return DEFAULT_COLUMNS_COLORS_INFO['REAL']
+        else:
+            return DEFAULT_COLUMNS_COLORS_INFO['DEFAULT']
 
 
 class NewPreviewPage(wx.Panel):
@@ -8248,7 +9302,6 @@ class NewPreviewPage(wx.Panel):
         self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
         wx.FutureCall(1, self.InitListCtrlColumnsValues)
         
-
     def OnContextMenu(self, event):
 
         # only do this part the first time so the events are only bound once
@@ -8319,7 +9372,7 @@ class NewPreviewPage(wx.Panel):
     
         dlg.Destroy()
         event.Skip()
-        
+                     
               
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -8341,7 +9394,7 @@ class NewPreviewPage(wx.Panel):
         wx.TheClipboard.SetData(clipdata)
         wx.TheClipboard.Close()
         event.Skip()
-        
+               
         
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -8426,7 +9479,6 @@ class NewPreviewPage(wx.Panel):
             self.MyGrid.SetColSize(index, 10)
         # self.listCtrl.Arrange()
     
-    
     def InitListCtrlColumnsValues(self):
         wait = wx.BusyCursor()
         try:
@@ -8489,7 +9541,7 @@ class NewPreviewPage(wx.Panel):
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
-            
+                
     
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
@@ -8537,8 +9589,7 @@ class AboutInfoHtmlWindow(wx.html.HtmlWindow):
         
     def OnLinkClicked(self, link):
         wx.LaunchDefaultBrowser(link.GetHref())
-        
-        
+
 
 class AboutHelpHtmlWindow(wx.html.HtmlWindow):
     def __init__(self, parent):
@@ -8615,6 +9666,203 @@ class AboutHelpDialog(wx.Dialog):
         self.Destroy()
 
 
+class CustomConsoleHandler(logging.StreamHandler):
+    """"""
+ 
+    #----------------------------------------------------------------------
+    def __init__(self, textctrl):
+        """"""
+        logging.StreamHandler.__init__(self)
+        self.textctrl = textctrl
+ 
+    #----------------------------------------------------------------------
+    def emit(self, record):
+        """Constructor"""
+        msg = self.format(record)
+        self.textctrl.SetInsertionPointEnd()
+        self.textctrl.WriteText(msg + "\n")
+        self.flush()
+
+
+class SQLLogPanel(wx.Panel):
+    """
+    wx.Point(0, 0)
+    wx.Size(150, 90)
+    """
+    
+    def __init__(self, parent, caption=""):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        self.LogTextCtrl = wx.TextCtrl(self, wx.ID_ANY, caption, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.NO_BORDER | wx.TE_MULTILINE)
+        self.CusCosHandler = CustomConsoleHandler(self.LogTextCtrl)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        self.CusCosHandler.setFormatter(formatter)
+        hSizer.Add(self.LogTextCtrl, 1, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 1, wx.EXPAND, 1)
+        self.SetSizerAndFit(vSizer)
+        
+
+class SQLPythonFuncPanel(wx.Panel):
+    """
+    """
+    def __init__(self, parent):  # @ReservedAssignment
+        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        # main sizer
+        vSizer = wx.BoxSizer(wx.VERTICAL)
+        # horizontal sizer for text ctrl
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stc = stc.StyledTextCtrl(self, wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize)
+        hSizer.Add(self.stc, 1, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 1, wx.EXPAND, 1)
+        # horizontal sizer for button
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.BtnInsertFuntion = wx.Button(self, wx.ID_ANY, label="Insert Function", pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, name="BTN_INSERT_FUNCTION")
+        hSizer.Add((5, 5), 1, wx.EXPAND, 1)
+        hSizer.Add(self.BtnInsertFuntion, 0, wx.EXPAND, 1)
+        vSizer.Add(hSizer, 0, wx.EXPAND | wx.ALL, 10)
+        self.SetSizerAndFit(vSizer)
+        
+        self.stc.SetLexer(stc.STC_LEX_PYTHON)
+        self.stc.SetKeyWords(0, " ".join(keyword.kwlist))
+
+        self.stc.SetProperty("fold", "1")
+        self.stc.SetProperty("tab.timmy.whinge.level", "1")
+        self.stc.SetMargins(0, 0)
+
+        self.stc.SetViewWhiteSpace(False)
+        # self.stc.SetBufferedDraw(False)
+        # self.stc.SetViewEOL(True)
+        # self.stc.SetEOLMode(stc.STC_EOL_CRLF)
+        # self.stc.SetUseAntiAliasing(True)
+        
+        self.stc.SetEdgeMode(stc.STC_EDGE_BACKGROUND)
+        self.stc.SetEdgeColumn(78)
+
+        # Setup a margin to hold fold markers
+        # self.stc.SetFoldFlags(16)  ###  WHAT IS THIS VALUE?  WHAT ARE THE OTHER FLAGS?  DOES IT MATTER?
+        self.stc.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
+        self.stc.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        self.stc.SetMarginSensitive(2, True)
+        self.stc.SetMarginWidth(2, 12)
+
+        
+        # Like a flattened tree control using circular headers and curved joins
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_CIRCLEMINUS, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDER, stc.STC_MARK_CIRCLEPLUS, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB, stc.STC_MARK_VLINE, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL, stc.STC_MARK_LCORNERCURVE, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEREND, stc.STC_MARK_CIRCLEPLUSCONNECTED, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_CIRCLEMINUSCONNECTED, "white", "#404040")
+        self.stc.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNERCURVE, "white", "#404040")
+
+
+        # Make some styles,  The lexer defines what each style is used for, we
+        # just have to define what each style looks like.  This set is adapted from
+        # Scintilla sample property files.
+
+        # Global default styles for all languages
+        self.stc.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(helv)s,size:%(size)d" % faces)
+        self.stc.StyleClearAll()  # Reset all to be like the default
+
+        # Global default styles for all languages
+        self.stc.StyleSetSpec(stc.STC_STYLE_DEFAULT, "face:%(helv)s,size:%(size)d" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "back:#C0C0C0,face:%(helv)s,size:%(size2)d" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
+        self.stc.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#FFFFFF,back:#0000FF,bold")
+        self.stc.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#000000,back:#FF0000,bold")
+
+        # Python styles
+        # Default 
+        self.stc.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        # Comments
+        self.stc.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
+        # Number
+        self.stc.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
+        # String
+        self.stc.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        # Single quoted string
+        self.stc.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        # Keyword
+        self.stc.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
+        # Triple quotes
+        self.stc.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Triple double quotes
+        self.stc.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Class name definition
+        self.stc.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
+        # Function or method name definition
+        self.stc.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
+        # Operators
+        self.stc.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
+        # Identifiers
+        self.stc.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        # Comment-blocks
+        self.stc.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
+        # End of line where string is not closed
+        self.stc.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+
+        self.stc.SetCaretForeground("BLUE")
+        
+        self.BtnInsertFuntion.Bind(wx.EVT_BUTTON, self.OnBtnInsertFuntionClicked)
+        
+    
+    def OnBtnInsertFuntionClicked(self, event):  # @UnusedVariable
+        # create an object of EVT_COMMIT event
+        evt = MySQLiteInsertFunctionEvent(myEVT_SQLITE_INSERT_FUNCTION_CLICKED, wx.ID_ANY)
+        # set event argument
+        evt.SetEventArgs(self.stc.GetTextRaw())
+        # throw event
+        wx.PostEvent(self.GetParent(), evt)
+        # disable itself, do not worry, the event handler 
+
+
+class MyAuiNoteBook(aui.AuiNotebook):
+    def __init__(self, parent, agwStyleList=None):
+        aui.AuiNotebook.__init__(self, parent, wx.ID_ANY, agwStyle=agwStyleList)
+        
+        self.iNewPreviewPageUniqueID = 1
+        self.dictNewPreviewPageInfos = {}
+        
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClose)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+    
+    def OnTabBeginDrag(self, event):
+        if event.GetSelection() > 5:
+            event.Skip()
+        else:
+            event.Veto()
+    
+    def OnTabClose(self, event):
+        if event.GetSelection() > 5:
+            event.Skip()
+        else:
+            event.Veto()
+    
+    def OnTabChanged(self, event):
+        tabIndex = event.GetSelection()
+        if tabIndex <= 5:
+            tabText = event.GetEventObject().GetPageText(tabIndex)
+            strVorlage = GetTranslationText(1041, "This is %s page") 
+            self.Parent.SetStatusText(strVorlage % tabText)
+            self.Parent.SetStatusText("", 1)
+            self.Parent.SetStatusText("", 2)
+        else:
+            idPage = event.GetEventObject().GetPage(tabIndex).GetId()
+            if self.dictNewPreviewPageInfos.has_key(idPage):
+                tabText = self.dictNewPreviewPageInfos[idPage].get('tab_name', "Unknown")
+                sqltable = self.dictNewPreviewPageInfos[idPage].get('sqltable_name', "Unknown")
+                sqlitepath = self.dictNewPreviewPageInfos[idPage].get('sqlite_path', "Unknown")
+                strVorlage = GetTranslationText(1041, "This is %s page") 
+                self.Parent.SetStatusText(strVorlage % tabText)
+                self.Parent.SetStatusText(sqltable, 1)
+                self.Parent.SetStatusText(sqlitepath, 2)
+            else:
+                self.Parent.SetStatusText(GetTranslationText(1042, "Unkown Page"), 0)
+                self.Parent.SetStatusText("", 1)
+                self.Parent.SetStatusText("", 2)
+                
+
 
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
 class MainFrame(wx.Frame):
@@ -8622,8 +9870,8 @@ class MainFrame(wx.Frame):
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'SQLite Manager 1.9', size=(960, 650))
         self.CenterOnScreen()
-        self.iNewPreviewPageUniqueID = 1
-        self.dictNewPreviewPageInfos = {}
+        
+        self._perspectives = []
         
         # create statusbar
         self.CreateStatusBar()
@@ -8638,76 +9886,162 @@ class MainFrame(wx.Frame):
 
         # 1st menu from left
         self.menu1 = wx.Menu()
-        self.menu1.Append(101, GetTranslationText(1026, "&Close"),
+        self.menu1.Append(107, "&Save Changes",
+                          "Commit changes")
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(False)
+        self.menu1.Append(108, "&Revert Changes",
+                          "Revert changes")
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(False)
+        self.menu1.AppendSeparator() 
+        self.menu1.Append(109, GetTranslationText(1026, "&Close"),
                           GetTranslationText(1027, "Close this frame"))
         # Add menu to the menu bar
         menuBar.Append(self.menu1, GetTranslationText(1028, "&File"))
-
+        
         # 2nd menu from left
         self.menu2 = wx.Menu()
-        self.menu2.AppendCheckItem(200, GetTranslationText(1029, "&Preview"),
-                                    GetTranslationText(1030, "Preview a table infos of SQLite"))
-        self.menu2.AppendCheckItem(204, GetTranslationText(1055, "&Data View"),
-                                   GetTranslationText(1056, "View a table of SQLite"))
-        self.menu2.AppendCheckItem(201, GetTranslationText(1031, "&Import"),
-                                   GetTranslationText(1032, "Import a table into SQLite"))
-        self.menu2.AppendCheckItem(202, GetTranslationText(1033, "&Export"),
-                                   GetTranslationText(1034, "Export a table from SQLite"))
-        self.menu2.AppendCheckItem(203, GetTranslationText(1035, "&Migrate"),
-                                   GetTranslationText(1036, "Migrate a table between SQLites"))
-        
-        # Append 2nd menu
-        menuBar.Append(self.menu2, GetTranslationText(1037, "&Edit"))
+        self.menu2.Append(201, "&Create new table", "Create new table")
+        it201 = self.menu2.FindItemById(201)
+        it201.Enable(False)
+        # Add menu to the menu bar
+        menuBar.Append(self.menu2, GetTranslationText(1028, "&Edit"))
 
-        # 2nd menu from left
+        # 3rd menu from left
         self.menu3 = wx.Menu()
-        self.menu3.Append(301, GetTranslationText(1038, "&Info"))
-        self.menu3.Append(302, GetTranslationText(1039, "&Help"))
-        # Append 2nd menu
-        menuBar.Append(self.menu3, GetTranslationText(1040, "&Extra"))
+        self.menu3.Append(300, GetTranslationText(1029, "&Preview"),
+                                    GetTranslationText(1030, "Preview a table infos of SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(304, GetTranslationText(1055, "&Data View"),
+                                   GetTranslationText(1056, "View a table of SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(305, GetTranslationText(1065, "&Execute SQL"),
+                                   GetTranslationText(1066, "Execute SQL command line"), wx.ITEM_RADIO)
+        self.menu3.Append(301, GetTranslationText(1031, "&Import"),
+                                   GetTranslationText(1032, "Import a table into SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(302, GetTranslationText(1033, "&Export"),
+                                   GetTranslationText(1034, "Export a table from SQLite"), wx.ITEM_RADIO)
+        self.menu3.Append(303, GetTranslationText(1035, "&Migrate"),
+                                   GetTranslationText(1036, "Migrate a table between SQLites"), wx.ITEM_RADIO)
+        # Append 3rd menu
+        menuBar.Append(self.menu3, "&View")
+        
+        
+        # 4rd menu from left
+        self.menu4 = wx.Menu()
+        self.menu4.Append(401, "&Log window", "Show log window", wx.ITEM_CHECK)
+        self.menu4.Append(402, "&SQL log window", "Show SQL log window", wx.ITEM_CHECK)
+        self.menu4.Append(403, "&Python function Window", "Show function window", wx.ITEM_CHECK)
+        # Append 3rd menu
+        menuBar.Append(self.menu4, "&Window")
+        
+        
+        # 5rd menu from left
+        self.menu5 = wx.Menu()
+        self.menu5.Append(501, GetTranslationText(1038, "&Info"))
+        self.menu5.Append(502, GetTranslationText(1039, "&Help"))
+        # Append 5rd menu
+        menuBar.Append(self.menu5, GetTranslationText(1040, "&Extra"))
 
         self.SetMenuBar(menuBar)
         
-        self.nb = aui.AuiNotebook(self, wx.ID_ANY, agwStyle=aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT | 
+        # tell FrameManager to manage this frame        
+        self._mgr = aui.AuiManager()
+        self._mgr.SetManagedWindow(self)
+        
+        self._mgr.AddPane(self.CreateMainPanel(), aui.AuiPaneInfo().Name("Main_Panel").CenterPane().Hide())
+        
+        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("Log_Panel").Caption("Log console").CloseButton(False).MaximizeButton(True).Hide())
+        
+        self._mgr.AddPane(self.CreatePyFuncPanel(), aui.AuiPaneInfo().Name("Func_Panel").Caption("Python function").Right().Row(1).Layer(1).Position(0).CloseButton(False).MaximizeButton(True).Hide())
+        
+        self._mgr.AddPane(self.CreateTextPanel(), aui.AuiPaneInfo().Name("SQLog_Panel").Caption("SQL Log").Right().Row(1).Layer(1).Position(1).CloseButton(False).MaximizeButton(True).Hide())
+        
+        perspective_all = self._mgr.SavePerspective()
+        
+        all_panes = self._mgr.GetAllPanes()
+        
+        for ii in xrange(len(all_panes)):
+            if not all_panes[ii].IsToolbar():
+                all_panes[ii].Hide()
+        
+        self._mgr.GetPane("Main_Panel").Show()
+        
+        perspective_default = self._mgr.SavePerspective()
+        
+        self._perspectives.append(perspective_default)
+        self._perspectives.append(perspective_all)
+        
+        # "commit" all changes made to FrameManager   
+        self._mgr.Update()
+        
+        
+        # Menu events
+        self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
+        # save changes
+        self.Bind(wx.EVT_MENU, self.Menu107, id=107)
+        # roll-back
+        self.Bind(wx.EVT_MENU, self.Menu108, id=108)
+        # close
+        self.Bind(wx.EVT_MENU, self.Menu109, id=109)
+        # id 300 ~ 399
+        self.Bind(wx.EVT_MENU, self.Menu300, id=300)
+        self.Bind(wx.EVT_MENU, self.Menu301, id=301)
+        self.Bind(wx.EVT_MENU, self.Menu302, id=302)
+        self.Bind(wx.EVT_MENU, self.Menu303, id=303)
+        self.Bind(wx.EVT_MENU, self.Menu304, id=304)
+        self.Bind(wx.EVT_MENU, self.Menu305, id=305)
+        # id 400 ~ 499
+        self.Bind(wx.EVT_MENU, self.Menu401, id=401)
+        self.Bind(wx.EVT_MENU, self.Menu402, id=402)
+        self.Bind(wx.EVT_MENU, self.Menu403, id=403)
+        # id 500 ~ 599
+        self.Bind(wx.EVT_MENU, self.Menu501, id=501)
+        self.Bind(wx.EVT_MENU, self.Menu502, id=502)
+        # Range of menu items
+
+        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuViewOpen)
+        self.Bind(EVT_SQLITE_CHANGED, self.OnSQLiteChanged)
+        self.Bind(EVT_SQLITE_READY, self.OnSQLiteReady)
+        self.Bind(EVT_SQLITE_INSERT_FUNCTION_CLICKED, self.OnSQLiteInsertFunctionClicked)
+        # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
+        self.Show()
+    
+    def CreateMainPanel(self):
+        
+        self.nb = MyAuiNoteBook(self, agwStyleList=aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT | 
                                   aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_CLOSE_ON_ACTIVE_TAB | aui.AUI_NB_MIDDLE_CLICK_CLOSE)
         
         self.PreveiwPage = SQLPreviewPage(self.nb)
-        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"))
+        self.nb.AddPage(self.PreveiwPage, GetTranslationText(1029, "Preview"), wx.ITEM_RADIO)
         self.ViewTablePage = SQLViewTablePage(self.nb)
         self.nb.AddPage(self.ViewTablePage, GetTranslationText(1055, "View data"))
+        self.ExecutePage = SQLExecuteSQLPage(self.nb)
+        self.nb.AddPage(self.ExecutePage, GetTranslationText(1065, "Execute SQL"))
         self.ImportPage = SQLImportPage(self.nb)
         self.nb.AddPage(self.ImportPage, GetTranslationText(1031, "Import"))
         self.ExportPage = SQLExportPage(self.nb)
         self.nb.AddPage(self.ExportPage, GetTranslationText(1033, "Export"))
         self.MigratePage = SQLMigratePage(self.nb)
         self.nb.AddPage(self.MigratePage, GetTranslationText(1035, "Migrate"))
-        
-        
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.nb, 1, wx.EXPAND)
-        self.SetSizer(self.sizer)
-        
-        # Menu events
-        self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
-
-        self.Bind(wx.EVT_MENU, self.Menu101, id=101)
-
-        self.Bind(wx.EVT_MENU, self.Menu200, id=200)
-        self.Bind(wx.EVT_MENU, self.Menu201, id=201)
-        self.Bind(wx.EVT_MENU, self.Menu202, id=202)
-        self.Bind(wx.EVT_MENU, self.Menu203, id=203)
-        self.Bind(wx.EVT_MENU, self.Menu204, id=204)
-        self.Bind(wx.EVT_MENU, self.Menu301, id=301)
-        self.Bind(wx.EVT_MENU, self.Menu302, id=302)
-
-        # Range of menu items
-
-        
-        self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClose)
-        self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
-        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuEditOpen)
-        # wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.OnUpdateMenu)
-        self.Show()
+        return self.nb
+    
+    def CreateTextPanel(self):
+        tp = SQLLogPanel(self)
+        return tp
+    
+    def CreatePyFuncPanel(self):
+        tp = SQLPythonFuncPanel(self)
+        return tp
+    
+    def OnCreateText(self, event):  # @UnusedVariable
+        """
+        Example code for add a panel dynamic 
+        """
+        self._mgr.AddPane(self.CreateTextCtrl(), aui.AuiPaneInfo().
+                          Caption("Text Control").
+                          Float().FloatingPosition(self.GetStartPosition()).
+                          CloseButton(True).MaximizeButton(True))
+        self._mgr.Update()
     
     # Methods
     def OnMenuHighlight(self, event):
@@ -8717,97 +10051,169 @@ class MainFrame(wx.Frame):
         if item:
             text = item.GetText()  # @UnusedVariable
             help = item.GetHelp()  # @ReservedAssignment
-            
         # but in this case just call Skip so the default is done
-        event.Skip() 
+        event.Skip()
+    
+    def OnSQLiteInsertFunctionClicked(self, event):
+        """
+        Save changes
+        """
+        # create an object of EVT_COMMIT event
+        evt = MyCommitEvent(myEVT_SQLITE_INSERT_FUNCTION, 402)
+        # set event argument
+        evt.SetEventArgs(event.eventArgs)
+        # throw event
+        wx.PostEvent(self.PreveiwPage, evt)
+    
+    def Menu107(self, event):  # @UnusedVariable
+        """
+        Save changes
+        """
+        # create an object of EVT_COMMIT event
+        evt = MyCommitEvent(myEVT_COMMIT, 107)
+        # set event argument
+        evt.SetEventArgs("Save Changes")
+        # throw event
+        wx.PostEvent(self.PreveiwPage, evt)
+        # disable itself, do not worry, the event handler 
+        # will be called after this handler finished
+        self.OnSQLiteReady(None)
+    
+    def Menu108(self, event):  # @UnusedVariable
+        """
+        Revert changes
+        """
+        # create an object of EVT_COMMIT event
+        evt = MyRollbackEvent(myEVT_ROLLBACK, 108)
+        # set event argument
+        evt.SetEventArgs("Save Changes")
+        # throw event
+        wx.PostEvent(self.PreveiwPage, evt)
+        # disable itself, do not worry, the event handler 
+        # will be called after this handler finished
+        self.OnSQLiteReady(None)
+        
 
-    def Menu101(self, event):  # @UnusedVariable
+    def Menu109(self, event):  # @UnusedVariable
+        """
+        Close Menu
+        """
         self.Close()
 
-    def Menu200(self, event):  # @UnusedVariable
+    def Menu300(self, event):  # @UnusedVariable
         logger.info('Preview Menu Clicked')
         self.nb.SetSelection(0)
 
-    def Menu201(self, event):  # @UnusedVariable
+    def Menu301(self, event):  # @UnusedVariable
         logger.info('Import Menu Clicked')
-        self.nb.SetSelection(2)
-
-    def Menu202(self, event):  # @UnusedVariable
-        logger.info('Export Menu Clicked')
         self.nb.SetSelection(3)
 
-    def Menu203(self, event):  # @UnusedVariable
-        logger.info('Executed Menu Clicked')
+    def Menu302(self, event):  # @UnusedVariable
+        logger.info('Export Menu Clicked')
         self.nb.SetSelection(4)
-        
-    def Menu204(self, event):  # @UnusedVariable
+
+    def Menu303(self, event):  # @UnusedVariable
+        logger.info('Executed Menu Clicked')
+        self.nb.SetSelection(5)
+    
+    def Menu304(self, event):  # @UnusedVariable
         logger.info('View Menu Clicked')
         self.nb.SetSelection(1)
+        
+    def Menu305(self, event):  # @UnusedVariable
+        logger.info('Execute SQL Menu Clicked')
+        self.nb.SetSelection(2)
+    
+    def Menu401(self, event):  # @UnusedVariable
+        if event.Checked():
+            logger.info('Show Log windows')
+            activPane = self._mgr.GetPane("Log_Panel")
+            activPane.Show().Bottom().Layer(1).Row(0).Position(0)
+            win = activPane.window
+            logger.addHandler(win.CusCosHandler)
+            self._mgr.Update()
+        else:
+            logger.info('Hide Log windows')
+            activPane = self._mgr.GetPane("Log_Panel")
+            activPane.Hide()
+            win = activPane.window
+            logger.removeHandler(win.CusCosHandler)
+            self._mgr.Update()
             
-    def Menu301(self, event):  # @UnusedVariable
+    
+    def Menu402(self, event):  # @UnusedVariable
+        if event.Checked():
+            logger.info('Show SQL Log windows')
+            activPane = self._mgr.GetPane("SQLog_Panel")
+            activPane.Show()
+            self._mgr.Update()
+        else:
+            logger.info('Hide SQL Log windows')
+            activPane = self._mgr.GetPane("SQLog_Panel")
+            activPane.Hide()
+            self._mgr.Update()
+    
+    def Menu403(self, event):  # @UnusedVariable
+        if event.Checked():
+            logger.info('Show Python function windows')
+            activPane = self._mgr.GetPane("Func_Panel")
+            activPane.Show()
+            self._mgr.Update()
+        else:
+            logger.info('Hide Python function windows')
+            activPane = self._mgr.GetPane("Func_Panel")
+            activPane.Hide()
+            self._mgr.Update()
+            
+    def Menu501(self, event):  # @UnusedVariable
         logger.info('About info Menu Clicked')
         dlg = AboutInfoDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
     
-    def Menu302(self, event):  # @UnusedVariable
+    def Menu502(self, event):  # @UnusedVariable
         logger.info('Help info Menu Clicked')
         dlg = AboutHelpDialog(self)
         dlg.ShowModal()
         dlg.Destroy()
             
-    def OnTabClose(self, event):
-        if event.GetSelection() > 5:
-            event.Skip()
-        else:
-            event.Veto()
-    
-    def OnTabChanged(self, event):
-        tabIndex = event.GetSelection()
-        if tabIndex <= 4:
-            tabText = event.GetEventObject().GetPageText(tabIndex)
-            strVorlage = GetTranslationText(1041, "This is %s page") 
-            self.SetStatusText(strVorlage % tabText)
-            self.SetStatusText("", 1)
-            self.SetStatusText("", 2)
-        else:
-            idPage = event.GetEventObject().GetPage(tabIndex).GetId()
-            if self.dictNewPreviewPageInfos.has_key(idPage):
-                tabText = self.dictNewPreviewPageInfos[idPage].get('tab_name', "Unknown")
-                sqltable = self.dictNewPreviewPageInfos[idPage].get('sqltable_name', "Unknown")
-                sqlitepath = self.dictNewPreviewPageInfos[idPage].get('sqlite_path', "Unknown")
-                strVorlage = GetTranslationText(1041, "This is %s page") 
-                self.SetStatusText(strVorlage % tabText)
-                self.SetStatusText(sqltable, 1)
-                self.SetStatusText(sqlitepath, 2)
-            else:
-                self.GrandParent.SetStatusText(GetTranslationText(1042, "Unkown Page"), 0)
-                self.GrandParent.SetStatusText("", 1)
-                self.GrandParent.SetStatusText("", 2)
-                
+
     def OnUpdateMenu(self, event):
         pass
     
-    def OnMenuEditOpen(self, event):
-        if event.GetMenu().GetMenuItems()[0].GetId() == 200:
-            lt = [False] * 5
+    def OnMenuViewOpen(self, event):
+        if event.GetMenu().GetMenuItems()[0].GetId() == 300:
+            lt = [False] * 6
             index = self.nb.GetSelection()
             if index > 5:
-                self.menu2.FindItemByPosition(0).Check(lt[0])
-                self.menu2.FindItemByPosition(1).Check(lt[1])
-                self.menu2.FindItemByPosition(2).Check(lt[2])
-                self.menu2.FindItemByPosition(3).Check(lt[3])
-                self.menu2.FindItemByPosition(4).Check(lt[4])
+                self.menu3.FindItemByPosition(0).Check(lt[0])
+                self.menu3.FindItemByPosition(1).Check(lt[1])
+                self.menu3.FindItemByPosition(2).Check(lt[2])
+                self.menu3.FindItemByPosition(3).Check(lt[3])
+                self.menu3.FindItemByPosition(4).Check(lt[4])
+                self.menu3.FindItemByPosition(5).Check(lt[5])
             else:
                 lt[index] = True
-                self.menu2.FindItemByPosition(0).Check(lt[0])
-                self.menu2.FindItemByPosition(1).Check(lt[1])
-                self.menu2.FindItemByPosition(2).Check(lt[2])
-                self.menu2.FindItemByPosition(3).Check(lt[3])
-                self.menu2.FindItemByPosition(3).Check(lt[4])
+                self.menu3.FindItemByPosition(0).Check(lt[0])
+                self.menu3.FindItemByPosition(1).Check(lt[1])
+                self.menu3.FindItemByPosition(2).Check(lt[2])
+                self.menu3.FindItemByPosition(3).Check(lt[3])
+                self.menu3.FindItemByPosition(4).Check(lt[4])
+                self.menu3.FindItemByPosition(5).Check(lt[5])
         else:
             pass
-
+        
+    def OnSQLiteChanged(self, event):  # @UnusedVariable
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(True)
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(True)
+    
+    def OnSQLiteReady(self, event):  # @UnusedVariable
+        it107 = self.menu1.FindItemById(107)
+        it107.Enable(False)
+        it108 = self.menu1.FindItemById(108)
+        it108.Enable(False)
 
 
 def GetTranslationText(idMsg=None, default=""):
@@ -8828,7 +10234,6 @@ class MyApp(wx.App):
     def OnExit(self):
         pass
 
-
 def main():
     global DEFAULT_LANGUAGE
     for arg in sys.argv:
@@ -8840,7 +10245,7 @@ def main():
                 pass
     app = MyApp()
     strTempPath = tempfile.gettempdir()
-    tStart = datetime.now()
+    tStart = datetime.now() 
     if not DEBUG_STDOUT:
         logger.setLevel(logging.INFO)
         hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
@@ -8856,7 +10261,7 @@ def main():
     try:
         frame = MainFrame(None) 
         frame.Show() 
-        app.MainLoop()
+        app.MainLoop() 
     except Exception as e:
         logger.info("* Error by starting %s" % str(e.message))
 
