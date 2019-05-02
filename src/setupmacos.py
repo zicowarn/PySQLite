@@ -19,7 +19,7 @@ __email__ = 'ziccowarn@gmail.com'
 __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2018-09-04'
-__updated__ = '2018-09-04'
+__updated__ = '2019-05-02'
 
 
 from setuptools import setup
@@ -35,10 +35,25 @@ def package_files(directory):
 
 
 APP = ['standardsqliteui.py']
+APP_NANE = "PySQLite"
 DATA_FILES = []
-OPTIONS = {}
+OPTIONS = {
+    'argv_emulation': True,
+    'iconfile': '../images/PySQLitebrowser.icns',
+    'plist': {
+        'CFBundleName': APP_NANE,
+        'CFBundleDisplayName': APP_NANE,
+        'CFBundleGetInfoString': "Pure Python SQLite Browser",
+        'CFBundleIdentifier': "E1BFF42D-9CB2-4C0B-9882-C21245231893",
+        'CFBundleVersion': "1.9 Beta",
+        'CFBundleShortVersionString': "1.9",
+        'NSHumanReadableCopyright': u"Copyright © 2019 " + __author__ + " All Rights Reserved"
+    }
+    
+    }
 
 setup(
+    name=APP_NANE,
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
