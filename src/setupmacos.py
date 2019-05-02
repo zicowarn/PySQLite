@@ -6,7 +6,7 @@
 # 
 # THIS PROGRAM IS FREE SOFTWARE, IS LICENSED UNDER MIT License
 # You can redistribute it and/or modify it under the
-# terms of the Do What The Fuck You Want To  MIT License
+# terms of the Do What You Want To  MIT License
 # as published by Zhichao Wang. contact: ziccowarn@gmail.com for more details.
 # 
 # Copyright © 2018 Zhichao Wang <ziccowarn@gmail.com>
