@@ -5,7 +5,7 @@
 # 
 # THIS PROGRAM IS FREE SOFTWARE, IS LICENSED UNDER MIT License
 # You can redistribute it and/or modify it under the
-# terms of the Do What The Fuck You Want To  MIT License
+# terms of the Do What You Want To  MIT License
 # as published by Zhichao Wang. contact: ziccowarn@gmail.com for more details.
 #
 # Copyright © 2018 Zhichao Wang <ziccowarn@gmail.com>
@@ -19,7 +19,7 @@ __version__ = '1.9'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2018-08-31'
+__updated__ = '2019-05-02'
 
 import sqlite3
 import os, sys
