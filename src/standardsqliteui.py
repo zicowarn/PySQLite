@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# standardsqliteui.py - The core part of the PPROJECT for manger the sqlite databae,
+# THIS FILE IS PART OF OPTICAM Project 
+# standardsqliteui.py - The core part of OPTICAM PPROJECT for manger the sqlite databae,
 # for export the sqlite table as sql file, or import a sql file into databse.
 # 
 # THIS PROGRAM IS FREE SOFTWARE, IS LICENSED UNDER MIT License
@@ -12,14 +13,13 @@
 #
 #
 
-
 __author__ = 'Zhichao Wang'
-__email__ = 'ziccowarn@gmail.com'
-__version__ = '1.9'
+__email__ = 'zicowarn@hotmail.com'
+__version__ = '1.2'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2019-05-02'
+__updated__ = '2019-05-03'
 
 import sqlite3
 import os, sys
@@ -42,8 +42,6 @@ try:
     import agw.flatnotebook as FNB
 except ImportError:  # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.flatnotebook as FNB  # @UnusedImport
-
-
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -82,7 +80,6 @@ else:
     face3 = 'Courier'
     pb = 10
 
-
 DEBUG_STDOUT = False
 DEFAULT_LANGUAGE = "049"
 DEFAULT_COLOUR_BACK = (-1, -1, -1, 255)
@@ -96,7 +93,6 @@ DEFAULT_COLUMNS_COLORS_INFO = {"NULL" : ((244, 184, 242, 255), (0, 0, 0, 255)),
                                "TEXT" : ((204, 204, 81, 255), (0, 0, 0, 255)),
                                "BLOB" : ((218, 165, 32, 255), (255, 255, 255, 255)),
                                "DEFAULT" :((-1, -1, -1, 255), (0, 0, 0, 255))}
-
 
 DEFAULT_SQLITE_KEY_WORDS_LIST = ['abort', 'action', 'add', 'after', 'all',
                                  'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by',
@@ -298,7 +294,6 @@ DEFAULT_TRANSLATION_DICT = {
                                     1059:u"重新加载该数据表",
                                      }
                             }
-
 
 myQR = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAAlgAAAJXCAIAAADAUr1eAAAAA3NCSVQICAjb4U/gAAAgAElE"
@@ -5852,7 +5847,6 @@ iconRefresh = PyEmbeddedImage(
     "t8uMHQAAAC56VFh0bW9kaWZ5LWRhdGUAAHjaMzIwsNA1sNQ1MgoxNLIyMrIyMdA2sLAyMAAA"
     "QeMFEtXze+IAAAAASUVORK5CYII=")
 
-
 iconFilterDelete_ = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAwFBMVEX///9dPgCTAADKKQCT"
     "XQD/zP+UXgD/pyr/+En/KQD/TAz/gyD/MwD/bBT/+Jb//wD/nh7/qyf/63L/qiP/0gD/shz/"
@@ -5867,7 +5861,6 @@ iconFilterDelete_ = PyEmbeddedImage(
     "MTE6NTg6MzYrMDg6MDCpE1neAAAAJXRFWHRtb2RpZnktZGF0ZQAyMDA4LTEwLTIzVDExOjU5"
     "OjUwKzA4OjAwvN94aQAAAABJRU5ErkJggg==")
 
-
 iconTable = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAwFBMVEX///8eqv/Gz9goMz8A"
     "G4knMz7N8P/t8vf5+/zW8/+7xc/5/P4irP/3+fy8xtAAXMgAG4oAnf8AZMvw9Pn8/f7H0NkA"
@@ -5881,7 +5874,6 @@ iconTable = PyEmbeddedImage(
     "20A19oZKCNoerhBLzsGRCDGuw3L7QRlg5ASBO1PGzbc/xEQZQU7i/QEAAAAldEVYdGNyZWF0"
     "ZS1kYXRlADIwMDgtMTAtMjNUMTE6NTg6MzYrMDg6MDCpE1neAAAAJXRFWHRtb2RpZnktZGF0"
     "ZQAyMDA4LTEwLTIzVDExOjU5OjUwKzA4OjAwvN94aQAAAABJRU5ErkJggg==")
-
 
 iconPlay = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -5914,7 +5906,6 @@ iconPlay = PyEmbeddedImage(
     "vD1c8bX7o9plVwflALPI1ztwnQI3P/mGnbrvYW0//zswk93y/H/+Ki4BAgYlumoV8doR8IFm"
     "/5rDTc0AZ4B5wL/dx/8F4Sn6jGdwTSoAAAAASUVORK5CYII=")
 
-
 iconOpen = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
     "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCyoGQsg9cAAAAVRJREFUSMftlb9LAmEY"
@@ -5925,8 +5916,6 @@ iconOpen = PyEmbeddedImage(
     "1JICsG37UVzU6/1hTw7Acd0HcZDPY1mWFIDneZpwHAfDNL9kAAaDwaMIggCj3X6TFSQBYJhm"
     "VxLAFQCWZT3P2nl9+QrgUwDY3a428wQ5DtvpdBAF0DStFPHODhOJxEzMwzCkeHRyed1szr/0"
     "8foGWxuW7FKc7/IAAAAASUVORK5CYII=")
-
-
 
 iconSave = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -5945,8 +5934,6 @@ iconSave = PyEmbeddedImage(
     "OHXiJK0kYX5+nuGHAYMowY5y4ihGjGBEkOEAisxvamOd53/ftev/XlyBwApAhw4F7xe7P/3+"
     "CJwpq2bG5GNl3iJjDMaY8ftEwduBq+SLc/L+n/O/QXAV6FfLunTLmDS/0ibNAvqOd3wE3RZL"
     "N8IimxcAAAAASUVORK5CYII=")
-
-
 
 iconStep = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
@@ -5981,8 +5968,6 @@ iconStep = PyEmbeddedImage(
     "NUIr2guaruYkUmAPHTm0b+vWLTuAi4D9f34VKKUwxgSzZ7fNffzxNcs6O7s+LoRQIyPDw4cP"
     "950dGBi8NFMO81Ec/wYuErBUcLuWEQAAAABJRU5ErkJggg==")
 
-
-
 iconAddTab = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAA"
     "CXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggKCys0kwRdsQAAAnpJREFUSMe1lk1IVFEU"
@@ -5998,7 +5983,6 @@ iconAddTab = PyEmbeddedImage(
     "BKGVobnIiYqmvhllW2f6+z8Mq55HL1vEYa/44ZGcDW4BU4AL6MKLV/LV83IeEoYCiNLaN8aE"
     "2tFB1DH3iDqjStRoqrrunRkxkyP7f0Wnpyr1eFWOt4FWsUBIRkJiWFXhY91SAK4xWK3FVTrn"
     "R2TSsSw42i4saO+n68t8pWfnqfZ+q53+tvwFkT4gA0fhj1oAAAAASUVORK5CYII=")
-
 
 iconTabClose = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/gD+AP7rGNSCAAAA"
@@ -6019,7 +6003,6 @@ iconTabClose = PyEmbeddedImage(
     "aILjjTvfeKe2ZiYlhIAzUAK8/R/dvwAiz28+4sbLNwAAAC56VFh0Y3JlYXRlLWRhdGUAAHja"
     "MzIwsNA1sNA1MgkxMLAyMrMyNNc1MLUyMAAAQgkFF2r5U+wAAAAuelRYdG1vZGlmeS1kYXRl"
     "AAB42jMyMLDQNbDQNTIIMTS1MrG0MrHQNTC1MjAAAEJrBSKggLlyAAAAAElFTkSuQmCC")
-
 
 iconTableViewSave = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAA3NCSVQICAjb4U/gAAADbUlE"
@@ -6047,7 +6030,9 @@ if DEBUG_STDOUT:
 else:
     logger = logging.getLogger(' #PySQLiteMGer64# ')
 
+
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
+
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
         listmix.CheckListCtrlMixin.__init__(self)
@@ -6255,6 +6240,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
 
 
 class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
+
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
         listmix.CheckListCtrlMixin.__init__(self)
@@ -6306,7 +6292,6 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                         self.Bind(wx.EVT_MENU, self.OnMenuUnCheckSelected, id=self.popupIDUncheck)
                         self.Bind(wx.EVT_MENU, self.OnMenuViewInTabSelected, id=self.popupIDView)
                         
-                        
                     # make a menu
                     menu = wx.Menu()
                     # Show how to put an icon in the menu
@@ -6316,9 +6301,6 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                     menu.AppendItem(itemUncheck)
                     itemView = wx.MenuItem(menu, self.popupIDView, GetTranslationText(1005, "View"))
                     menu.AppendItem(itemView)
-                    
-                    
-                    
                                                                 
                     if self.GetItem(iColumn).GetImage():
                         itemCheck.Enable(False)
@@ -6442,6 +6424,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
 
 
 class SQLiteUIListCtrlStandard(wx.ListCtrl):
+
     def __init__(self, *args, **kwargs):
         wx.ListCtrl.__init__(self, *args, **kwargs)
         self.listSelectedItems = []
@@ -6461,6 +6444,7 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
 
 
 class SQLiteTableUIGridStandard(wx.grid.Grid):
+
     def __init__(self, *args, **kwargs):
         wx.grid.Grid.__init__(self, *args, **kwargs)
         self.listSelectedItems = []
@@ -6472,7 +6456,6 @@ class SQLiteTableUIGridStandard(wx.grid.Grid):
         
         self.Bind(wx.EVT_KEY_DOWN, self.OnTasteKeyDown)
         self.Bind(wx.EVT_KEY_UP, self.OnTasteKeyUp)
-        
     
     def OnTasteKeyDown(self, event):
         if event.KeyCode == wx.WXK_CONTROL:
@@ -6514,11 +6497,13 @@ class SQLiteTableUIGridStandard(wx.grid.Grid):
     
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
 class SQLiteUISplitterWindow(wx.SplitterWindow):
+
     def __init__(self, *args, **kwargs):
         wx.SplitterWindow.__init__(self, *args, **kwargs)
 
 
 class SQLMigratePage(wx.Panel):
+
     def __init__(self, parent):
         wx.Panel.__init__(self, parent=parent)
         
@@ -6550,7 +6535,6 @@ class SQLMigratePage(wx.Panel):
         self.splitter.SplitVertically(self.leftPart, self.rightPart, 0)
         # self.splitter.Layout()
         
-        
         self.btnMigrateLeft2Right = wx.Button(self, label=GetTranslationText(1006, "Migrate left to right"))
         self.btnMigrateRight2Left = wx.Button(self, label=GetTranslationText(1007, "Migrate right to left"))
         
@@ -6578,7 +6562,6 @@ class SQLMigratePage(wx.Panel):
         
         self.btnMigrateLeft2Right.Bind(wx.EVT_BUTTON, self.OnMigrateLeft2RightClicked)
         self.btnMigrateRight2Left.Bind(wx.EVT_BUTTON, self.OnMigrateRight2LeftClicked)
-        
     
     def OnMenuViewInTabSelected(self, event):  # @UnusedVariable
         """
@@ -6822,7 +6805,20 @@ class SQLMigratePage(wx.Panel):
             logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
-            return "UNKNOWN"
+            if "std_" in strTable:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    return "STANDARD WIRE"
+                else:
+                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    return "STANDARD TECH"
+            else:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    return "OEM WIRE"
+                else:
+                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    return "OEM TECH"
 
     def OnSashChanged(self, event):
         logger.info("sash changed to %s\n" % str(event.GetSashPosition()))
@@ -6865,6 +6861,7 @@ class SQLMigratePage(wx.Panel):
 
 
 class SQLMigratePanel():
+
     def __init__(self, parent):  # @ReservedAssignment
         
         ##### SQLite Database "open file" button
@@ -6872,7 +6869,7 @@ class SQLMigratePanel():
             parent, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite")
+            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb")
         
         # self.fbOpenDatabase.SetBackgroundColour("blue")
         
@@ -6893,19 +6890,18 @@ class SQLMigratePanel():
 
 
 class SQLExportPage(wx.Panel):
+
     def __init__(self, parent):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
-
         
         ##### SQLite Database "open file" button
         self.fbOpenDatabase = filebrowse.FileBrowseButton(
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
-            changeCallback=self.OnOpenDatabaseCallBacked
+            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb",
+            changeCallback=self.OnOpenDatenbankCallBacked
             )
-        
         
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlWithCheckBox(self, style=wx.LC_REPORT)
@@ -6941,7 +6937,6 @@ class SQLExportPage(wx.Panel):
         
         self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesExpert, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        
         
         self.strSQLitePath = ""
         self.conn = None
@@ -7073,10 +7068,24 @@ class SQLExportPage(wx.Panel):
             logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
-            return "UNKNOWN"
+            if "std_" in strTable:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    return "STANDARD WIRE"
+                else:
+                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    return "STANDARD TECH"
+            else:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    return "OEM WIRE"
+                else:
+                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    return "OEM TECH"
 
 
 class SQLImportPage(wx.Panel):
+
     def __init__(self, parent):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
         
@@ -7085,9 +7094,8 @@ class SQLImportPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1024, "SQL Destination: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
-            changeCallback=self.OnOpenDatabaseCallBacked)
-        
+            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb",
+            changeCallback=self.OnOpenDatenbankCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
@@ -7110,19 +7118,15 @@ class SQLImportPage(wx.Panel):
         #### Sizer, positing the widgets 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.fbOpenDatabase, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-
         
         # sizerH = wx.BoxSizer(wx.HORIZONTAL)
         # sizerH.Add(self.cbWithCreateCommand, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         # sizerH.Add(self.cbWithBeginTransaction, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         
-        
         self.sizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         
         # self.sizer.Add(sizerH, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.sizer.Add(self.btnSelectedTablesImport, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        
-        
         
         self.listCtrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK , self.OnContextMenu)
         self.btnSelectedTablesImport.Bind(wx.EVT_BUTTON, self.OnButtonImportTablesClicked)
@@ -7246,7 +7250,7 @@ class SQLImportPage(wx.Panel):
         dlg = wx.FileDialog(self, message=GetTranslationText(1021, "Choose a SQLite table"),
                             defaultDir=os.getcwd(),
                             defaultFile="",
-                            wildcard="sqlite (*.SQL)|*.sql",
+                            wildcard="sqlite (*.SQL)|*.sql| opticam (*.OPTICAMdbt)|*.opticamdbt",
                             style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_CHANGE_DIR
                            # | wx.DD_DIR_MUST_EXIST
                            # | wx.DD_CHANGE_DIR
@@ -7287,7 +7291,6 @@ class SQLImportPage(wx.Panel):
         # Only destroy a dialog after you're done with it.
         dlg.Destroy()
     
-    
     def OnOpenDatabaseCallBacked(self, event):
         if event:
             logger.info('DirBrowseButton: %s\n' % event.GetString())
@@ -7323,10 +7326,24 @@ class SQLImportPage(wx.Panel):
             logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
-            return "UNKNOWN"
+            if "std_" in strTable:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    return "STANDARD WIRE"
+                else:
+                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    return "STANDARD TECH"
+            else:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    return "OEM WIRE"
+                else:
+                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    return "OEM TECH"
 
 
 class SQLPreviewPage(wx.Panel):
+
     def __init__(self, parent):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
         
@@ -7528,7 +7545,6 @@ class SQLPreviewPage(wx.Panel):
         else:
             return False
     
-    
     def RenameSQLTable(self, strNewTable="", strOldTable=""):
         if strNewTable == "" or strOldTable == "":
             return False
@@ -7554,7 +7570,6 @@ class SQLPreviewPage(wx.Panel):
         """
 
         yield('BEGIN TRANSACTION;')
-     
 
         if strNewTable == "":
             q = 'DROP TABLE IF EXISTS "%s";' % strExpertTable;
@@ -7639,6 +7654,7 @@ class SQLPreviewPage(wx.Panel):
         
 
 class SQLViewTablePage(wx.Panel):
+
     def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
         
@@ -7818,7 +7834,6 @@ class SQLViewTablePage(wx.Panel):
     
         dlg.Destroy()
         event.Skip()
-        
               
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -7840,7 +7855,6 @@ class SQLViewTablePage(wx.Panel):
         wx.TheClipboard.SetData(clipdata)
         wx.TheClipboard.Close()
         event.Skip()
-        
         
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -7986,7 +8000,6 @@ class SQLViewTablePage(wx.Panel):
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
-            
     
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
@@ -7997,6 +8010,7 @@ class SQLViewTablePage(wx.Panel):
     
 
 class SQLExecuteSQLPage(wx.Panel):
+
     def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
         
@@ -8062,6 +8076,7 @@ class SQLExecuteSQLPage(wx.Panel):
 class SQLNotebookTab(wx.Panel):
     """
     """
+
     def __init__(self, parent, id=wx.ID_ANY):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent)
         
@@ -8132,7 +8147,6 @@ class SQLNotebookTab(wx.Panel):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnMSPChanged)
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnMSPChanging)
 
-
     def OnMSPChanging(self, evt):
         logger.info("Changing sash:%d  %s\n" % (evt.GetSashIdx(), evt.GetSashPosition()))
         iSashPosition = evt.GetSashPosition()
@@ -8143,7 +8157,6 @@ class SQLNotebookTab(wx.Panel):
                 evt.Veto()
             else:
                 evt.Skip()
-        
 
     def OnMSPChanged(self, evt):
         logger.info("Changed sash:%d  %s" % (evt.GetSashIdx(), evt.GetSashPosition()))
@@ -8154,7 +8167,6 @@ class SQLNotebookTab(wx.Panel):
         wx.TheClipboard.Flush()
         evt.Skip()
 
-
     def OnSTCStartDrag(self, evt):
         logger.info("OnStartDrag: %d, %s" \
                        % (evt.GetDragAllowMove(), evt.GetDragText()))
@@ -8164,14 +8176,12 @@ class SQLNotebookTab(wx.Panel):
             evt.SetDragText("DRAGGED TEXT")  # you can change what is dragged
             # evt.SetDragText("")             # or prevent the drag with empty text
 
-
     def OnSTCDragOver(self, evt):
         logger.info("OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d" \
             % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult()))
 
         if evt.GetPosition() < 250:
             evt.SetDragResult(wx.DragNone)  # prevent dropping at the beginning of the buffer
-
 
     def OnSTCDoDrop(self, evt):
         logger.info("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n" \
@@ -8225,8 +8235,8 @@ class SQLNotebookTab(wx.Panel):
         return st
 
 
-
 class NewPreviewPage(wx.Panel):
+
     def __init__(self, parent, id=wx.ID_ANY, conn=None, curs=None, sqltable="", sqlitepath=""):  # @ReservedAssignment
         wx.Panel.__init__(self, parent=parent, id=id)
         self.ID = id
@@ -8237,7 +8247,6 @@ class NewPreviewPage(wx.Panel):
         self.sizer.Add(self.MyGrid, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizerAndFit(self.sizer)
         
-        
         self.conn = conn
         self.curs = curs
         self.sqltable = sqltable
@@ -8247,7 +8256,6 @@ class NewPreviewPage(wx.Panel):
         self.InitListCtrlColumns()
         self.MyGrid.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnContextMenu)
         wx.FutureCall(1, self.InitListCtrlColumnsValues)
-        
 
     def OnContextMenu(self, event):
 
@@ -8319,7 +8327,6 @@ class NewPreviewPage(wx.Panel):
     
         dlg.Destroy()
         event.Skip()
-        
               
     def OnRowCopyAsCSV(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -8341,7 +8348,6 @@ class NewPreviewPage(wx.Panel):
         wx.TheClipboard.SetData(clipdata)
         wx.TheClipboard.Close()
         event.Skip()
-        
         
     def OnRowCopyAsCSVMS(self, event):
         iCursorRow = self.MyGrid.GetGridCursorRow()
@@ -8426,7 +8432,6 @@ class NewPreviewPage(wx.Panel):
             self.MyGrid.SetColSize(index, 10)
         # self.listCtrl.Arrange()
     
-    
     def InitListCtrlColumnsValues(self):
         wait = wx.BusyCursor()
         try:
@@ -8489,7 +8494,6 @@ class NewPreviewPage(wx.Panel):
         query_res = self.curs.execute(sqlstring)
         for row in query_res:
             yield("%s;" % row[0])
-            
     
     def DeleteRecordFromSQLiteTableByIndex(self, indexOfDelete):
         # Build the insert statement for each row of the current table
@@ -8500,6 +8504,7 @@ class NewPreviewPage(wx.Panel):
     
 
 class AboutInfoHtmlWindow(wx.html.HtmlWindow):
+
     def __init__(self, parent):
         wx.html.HtmlWindow.__init__(self, parent, wx.ID_ANY, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         
@@ -8538,9 +8543,9 @@ class AboutInfoHtmlWindow(wx.html.HtmlWindow):
     def OnLinkClicked(self, link):
         wx.LaunchDefaultBrowser(link.GetHref())
         
-        
 
 class AboutHelpHtmlWindow(wx.html.HtmlWindow):
+
     def __init__(self, parent):
         wx.html.HtmlWindow.__init__(self, parent, wx.ID_ANY, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         
@@ -8571,6 +8576,7 @@ class AboutHelpHtmlWindow(wx.html.HtmlWindow):
 
 
 class AboutInfoDialog(wx.Dialog):
+
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, -1, size=(340, 380))
         # style = self.GetWindowStyle()
@@ -8588,6 +8594,7 @@ class AboutInfoDialog(wx.Dialog):
 
 
 class AboutHelpDialog(wx.Dialog):
+
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, -1, size=(320, 400))
         # style = self.GetWindowStyle()
@@ -8613,7 +8620,6 @@ class AboutHelpDialog(wx.Dialog):
     
     def OnRightUp(self, event):  # @UnusedVariable
         self.Destroy()
-
 
 
 # class MainFrame(wx.Frame, wx.lib.mixins.inspection.InspectionMixin):
@@ -8682,7 +8688,6 @@ class MainFrame(wx.Frame):
         self.MigratePage = SQLMigratePage(self.nb)
         self.nb.AddPage(self.MigratePage, GetTranslationText(1035, "Migrate"))
         
-        
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.nb, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
@@ -8701,7 +8706,6 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.Menu302, id=302)
 
         # Range of menu items
-
         
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClose)
         self.nb.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
@@ -8809,7 +8813,6 @@ class MainFrame(wx.Frame):
             pass
 
 
-
 def GetTranslationText(idMsg=None, default=""):
     if DEFAULT_TRANSLATION_DICT.has_key(DEFAULT_LANGUAGE):
         return DEFAULT_TRANSLATION_DICT[DEFAULT_LANGUAGE].get(idMsg, default)
@@ -8859,6 +8862,7 @@ def main():
         app.MainLoop()
     except Exception as e:
         logger.info("* Error by starting %s" % str(e.message))
+
 
 if __name__ == '__main__':
     main()
