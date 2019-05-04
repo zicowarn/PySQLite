@@ -19,7 +19,7 @@ __version__ = '1.2'
 __status__ = 'Beta'
 __date__ = '2017-09-07'
 __note__ = "with wxPython 3.0"
-__updated__ = '2019-05-03'
+__updated__ = '2019-05-04'
 
 import sqlite3
 import os, sys
@@ -60,13 +60,13 @@ elif wx.Platform == '__WXMAC__':
               'mono' : 'Monaco',
               'helv' : 'Arial',
               'other': 'Comic Sans MS',
-              'size' : 12,
-              'size2': 10,
+              'size' : 10,
+              'size2': 9,
              }
     face1 = 'Helvetica'
     face2 = 'Times'
     face3 = 'Courier'
-    pb = 10
+    pb = 9
 else:
     faces = { 'times': 'Times',
               'mono' : 'Courier',
@@ -6878,7 +6878,7 @@ class SQLMigratePanel():
         self.listCtrl.InsertColumn(0, "")
         self.listCtrl.InsertColumn(1, GetTranslationText(1015, "Name"))
         self.listCtrl.InsertColumn(2, GetTranslationText(1016, "Type"))
-        self.listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.listCtrl.SetColumnWidth(0, 25)
         self.listCtrl.Arrange()
         
         #### Sizer, positing the widgets 
@@ -6899,16 +6899,14 @@ class SQLExportPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb",
-            changeCallback=self.OnOpenDatenbankCallBacked
-            )
+            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb", changeCallback=self.OnOpenDatabaseCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlWithCheckBox(self, style=wx.LC_REPORT)
         self.listCtrl.InsertColumn(0, "")
         self.listCtrl.InsertColumn(1, GetTranslationText(1015, "Name"))
         self.listCtrl.InsertColumn(2, GetTranslationText(1016, "Type"))
-        self.listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.listCtrl.SetColumnWidth(0, 25)
         self.listCtrl.SetColumnWidth(1, 600)
         self.listCtrl.Arrange()
         
@@ -6960,7 +6958,7 @@ class SQLExportPage(wx.Panel):
             table_name = strExpertTable
             yield('BEGIN TRANSACTION;')
         else:
-            pass
+            table_name = strExpertTable
         
         if isCreateCommand:
             q = 'DROP TABLE IF EXISTS "%s";' % table_name;
@@ -7029,7 +7027,8 @@ class SQLExportPage(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             logger.info('You selected: %s\n' % dlg.GetPath())
             for strTable in self.listCtrl.listSelectedItems:
-                strFullPath = dlg.GetPath() + "\%s.sql" % strTable
+                strFullPath = os.path.join(dlg.GetPath(), "%s.sql" % strTable)
+                #FIXME
                 with open(strFullPath, "w+b") as f:
                     for stRecord in self.ExportAsSQL(strExpertTable=strTable, isCreateCommand=self.cbWithCreateCommand.GetValue(),
                                                      isTransaction=self.cbWithBeginTransaction.GetValue()):
@@ -7094,8 +7093,7 @@ class SQLImportPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1024, "SQL Destination: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb",
-            changeCallback=self.OnOpenDatenbankCallBacked)
+            fileMask="sqlite (*.SQLite)|*.sqlite|opticam (*.OPTICAMdb)|*.opticamdb", changeCallback=self.OnOpenDatabaseCallBacked)
         
         #### SQLite tables list with List Ctrl widgets  ####
         self.listCtrl = SQLiteUIListCtrlStandard(self, style=wx.LC_REPORT)
@@ -7650,7 +7648,20 @@ class SQLPreviewPage(wx.Panel):
             logger.info("TEMPLATE    " + strTable)
             return "TEMPLATE"
         else:
-            return "UNKNOWN"
+            if "std_" in strTable:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    return "STANDARD WIRE"
+                else:
+                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    return "STANDARD TECH"
+            else:
+                if "wire" in strTable:
+                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    return "OEM WIRE"
+                else:
+                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    return "OEM TECH"
         
 
 class SQLViewTablePage(wx.Panel):
@@ -7737,7 +7748,7 @@ class SQLViewTablePage(wx.Panel):
         # 3. delete all columns
         if self.MyGrid.GetNumberCols() > 0:
             self.MyGrid.DeleteCols(0, self.MyGrid.GetNumberCols())
-        strSelectedTable = self.BitMapComboTablesList.GetStringSelection()
+        strSelectedTable = self.BitMapComboTablesList.GetValue()
         self.sqltable = strSelectedTable.replace(" ", "")
         self.InitListCtrlColumns()
         self.InitListCtrlColumnsValues()
@@ -8761,7 +8772,7 @@ class MainFrame(wx.Frame):
         dlg.Destroy()
             
     def OnTabClose(self, event):
-        if event.GetSelection() > 5:
+        if event.GetSelection() > 4:
             event.Skip()
         else:
             event.Veto()
