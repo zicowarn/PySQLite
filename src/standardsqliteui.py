@@ -31,7 +31,7 @@ import wx.lib.agw.aui as aui
 import  wx.stc  as  stc
 import wx.grid
 import wx.html
-import wx.combo
+from wx.adv import BitmapComboBox
 import wx.lib.mixins.listctrl as listmix
 import wx.lib.filebrowsebutton as filebrowse
 import wx.lib.agw.ultimatelistctrl as UltListCtrl  # @UnusedImport
@@ -6026,9 +6026,9 @@ iconTableViewSave = PyEmbeddedImage(
 
 if DEBUG_STDOUT:
     logging.basicConfig()
-    logger = logging.getLogger(' #PySQLiteMGer64# ')
+    logger = logging.getLogger('#PySQLiteMGer64#')
 else:
-    logger = logging.getLogger(' #PySQLiteMGer64# ')
+    logger = logging.getLogger('#PySQLiteMGer64#')
 
 
 class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, listmix.ListCtrlAutoWidthMixin):
@@ -6226,7 +6226,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
             self.Parent.cbWithBeginTransaction.Enable(True)
     
     def GetAllSelectionIndex(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0)
 
@@ -6234,7 +6234,7 @@ class SQLiteUIListCtrlWithCheckBox(wx.ListCtrl, listmix.CheckListCtrlMixin, list
         self.DeleteAllItems()
         
     def ClearAllSelection(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0)
 
@@ -6410,7 +6410,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
                 pass
     
     def GetAllSelectionIndex(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0)
     
@@ -6418,7 +6418,7 @@ class SQLiteUIListCtrlWithCheckBoxNonLinkage(wx.ListCtrl, listmix.CheckListCtrlM
         self.DeleteAllItems()
 
     def ClearAllSelection(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0)
 
@@ -6430,7 +6430,7 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
         self.listSelectedItems = []
         
     def GetAllSelectionIndex(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0)
     
@@ -6438,7 +6438,7 @@ class SQLiteUIListCtrlStandard(wx.ListCtrl):
         self.DeleteAllItems()
     
     def ClearAllSelection(self):
-        for x in xrange(0, self.GetItemCount(), 1):
+        for x in range(0, self.GetItemCount(), 1):
             # if not self.GetItem(x).GetImage():
             self.Select(x, on=0) 
 
@@ -6807,17 +6807,17 @@ class SQLMigratePage(wx.Panel):
         else:
             if "std_" in strTable:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD WIRE    " + strTable)
                     return "STANDARD WIRE"
                 else:
-                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD TECH    " + strTable)
                     return "STANDARD TECH"
             else:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    if DEBUG_STDOUT: print("OEM WIRE    " + strTable)
                     return "OEM WIRE"
                 else:
-                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    if DEBUG_STDOUT: print("OEM TECH    " + strTable)
                     return "OEM TECH"
 
     def OnSashChanged(self, event):
@@ -7069,17 +7069,17 @@ class SQLExportPage(wx.Panel):
         else:
             if "std_" in strTable:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD WIRE    " + strTable)
                     return "STANDARD WIRE"
                 else:
-                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD TECH    " + strTable)
                     return "STANDARD TECH"
             else:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    if DEBUG_STDOUT: print("OEM WIRE    " + strTable)
                     return "OEM WIRE"
                 else:
-                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    if DEBUG_STDOUT: print("OEM TECH    " + strTable)
                     return "OEM TECH"
 
 
@@ -7326,17 +7326,17 @@ class SQLImportPage(wx.Panel):
         else:
             if "std_" in strTable:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD WIRE    " + strTable)
                     return "STANDARD WIRE"
                 else:
-                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD TECH    " + strTable)
                     return "STANDARD TECH"
             else:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    if DEBUG_STDOUT: print("OEM WIRE    " + strTable)
                     return "OEM WIRE"
                 else:
-                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    if DEBUG_STDOUT: print("OEM TECH    " + strTable)
                     return "OEM TECH"
 
 
@@ -7650,17 +7650,17 @@ class SQLPreviewPage(wx.Panel):
         else:
             if "std_" in strTable:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "STANDARD WIRE    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD WIRE    " + strTable)
                     return "STANDARD WIRE"
                 else:
-                    if DEBUG_STDOUT: print "STANDARD TECH    " + strTable
+                    if DEBUG_STDOUT: print("STANDARD TECH    " + strTable)
                     return "STANDARD TECH"
             else:
                 if "wire" in strTable:
-                    if DEBUG_STDOUT: print "OEM WIRE    " + strTable
+                    if DEBUG_STDOUT: print("OEM WIRE    " + strTable)
                     return "OEM WIRE"
                 else:
-                    if DEBUG_STDOUT: print "OEM TECH    " + strTable
+                    if DEBUG_STDOUT: print("OEM TECH    " + strTable)
                     return "OEM TECH"
         
 
@@ -7679,7 +7679,7 @@ class SQLViewTablePage(wx.Panel):
         headSizerh = wx.BoxSizer(wx.HORIZONTAL)
         self.STLabelOfList = wx.StaticText(self, wx.ID_ANY, GetTranslationText(1058, u"Tables"), pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.ALIGN_CENTER)
         # self.STLabelOfList.SetBackgroundColour(wx.YELLOW)
-        self.BitMapComboTablesList = wx.combo.BitmapComboBox(self, pos=wx.DefaultPosition, size=wx.DefaultSize)
+        self.BitMapComboTablesList = BitmapComboBox(self, pos=wx.DefaultPosition, size=wx.DefaultSize)
         # self.BitMapComboTablesList.SetBackgroundColour(wx.BLUE)
         img = iconRefresh.GetImage()
         img = img.Scale(15, 15)
@@ -8787,7 +8787,7 @@ class MainFrame(wx.Frame):
             self.SetStatusText("", 2)
         else:
             idPage = event.GetEventObject().GetPage(tabIndex).GetId()
-            if self.dictNewPreviewPageInfos.has_key(idPage):
+            if idPage in self.dictNewPreviewPageInfos:
                 tabText = self.dictNewPreviewPageInfos[idPage].get('tab_name', "Unknown")
                 sqltable = self.dictNewPreviewPageInfos[idPage].get('sqltable_name', "Unknown")
                 sqlitepath = self.dictNewPreviewPageInfos[idPage].get('sqlite_path', "Unknown")
@@ -8825,7 +8825,7 @@ class MainFrame(wx.Frame):
 
 
 def GetTranslationText(idMsg=None, default=""):
-    if DEFAULT_TRANSLATION_DICT.has_key(DEFAULT_LANGUAGE):
+    if DEFAULT_LANGUAGE in DEFAULT_TRANSLATION_DICT:
         return DEFAULT_TRANSLATION_DICT[DEFAULT_LANGUAGE].get(idMsg, default)
     else:
         return default
@@ -8845,6 +8845,7 @@ class MyApp(wx.App):
 
 def main():
     global DEFAULT_LANGUAGE
+    global logger
     for arg in sys.argv:
         if "-c" in arg:
             strLandSetting = arg.replace("-c", "")
@@ -8859,10 +8860,11 @@ def main():
         logger.setLevel(logging.INFO)
         hdlr = logging.FileHandler(strTempPath + "\\PySQLiteMGer-" + str(tStart.date()) + ".log")
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setLevel(logging.DEBUG)
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
-        sys.stderr = hdlr
-        sys.stdout = hdlr
+        sys.stderr = None
+        sys.stdout = None
     else:
         logger.setLevel(logging.DEBUG)
 
