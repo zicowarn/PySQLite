@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Python SQLite Browser 64Bit"
-#define MyAppVersion "1.9"
+#define MyAppVersion "1.9.3"
 #define MyAppReversion "Beta"
 #define MyAppPublisher "me-iot.com"
 #define MyAppURL "http://www.me-iot.com/"
