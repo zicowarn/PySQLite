@@ -7224,7 +7224,7 @@ class SQLMigratePanel():
             parent, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite")
+            fileMask="sqlite (*.SQLite)|*.sqlite |All files (*.*) | *.* ")
         
         # self.fbOpenDatabase.SetBackgroundColour("blue")
         
@@ -7254,7 +7254,7 @@ class SQLExportPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1043, "SQL Source: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
+            fileMask="sqlite (*.SQLite)|*.sqlite |All files (*.*) | *.* ",
             changeCallback=self.OnOpenDatabaseCallBacked
             )
         
@@ -7437,7 +7437,7 @@ class SQLImportPage(wx.Panel):
             self, -1, size=(-1, -1),
             labelText=GetTranslationText(1024, "SQL Destination: "),
             dialogTitle=GetTranslationText(1025, "Select a sqlite database"),
-            fileMask="sqlite (*.SQLite)|*.sqlite",
+            fileMask="sqlite (*.SQLite)|*.sqlite |All files (*.*) | *.* ",
             changeCallback=self.OnOpenDatabaseCallBacked)
         
         
@@ -8749,7 +8749,7 @@ class SQLExecuteSQLPage(wx.Panel):
             defaultDir=os.getcwd(),
             defaultFile="",
             wildcard="SQL file (*.sql) | *.sql",
-            style=wx.OPEN | wx.CHANGE_DIR
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR
             )
         if dlg.ShowModal() == wx.ID_OK:
             if dlg.GetPath() != "":
