@@ -16,7 +16,7 @@
 
 __author__ = 'Zhichao Wang'
 __email__ = 'ziccowarn@gmail.com'
-__version__ = '1.9'
+__version__ = '1.9.3'
 __status__ = 'Beta'
 __date__ = '2018-08-31'
 __updated__ = '2019-05-02'
@@ -38,7 +38,7 @@ def package_files(directory):
 
 setup(
     name='standardsqliteui',
-    version='1.9',
+    version='1.9.3',
     # scripts=["settingmanagerui.py"],
     description="The Manager to select, import, export of sqlite database " ,
     author="Zhichao Wang" ,
