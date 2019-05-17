@@ -9868,7 +9868,7 @@ class MyAuiNoteBook(aui.AuiNotebook):
 class MainFrame(wx.Frame):
     
     def __init__(self, parent):
-        wx.Frame.__init__(self, parent, wx.ID_ANY, 'SQLite Manager 1.9', size=(960, 650))
+        wx.Frame.__init__(self, parent, wx.ID_ANY, 'SQLite Manager 1.9.3', size=(960, 650))
         self.CenterOnScreen()
         
         self._perspectives = []
