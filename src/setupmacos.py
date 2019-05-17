@@ -16,7 +16,7 @@
 
 __author__ = 'Zhichao Wang'
 __email__ = 'ziccowarn@gmail.com'
-__version__ = '1.9'
+__version__ = '1.9.3'
 __status__ = 'Beta'
 __date__ = '2018-09-04'
 __updated__ = '2019-05-02'
