@@ -9639,6 +9639,7 @@ class AboutInfoHtmlWindow(wx.html.HtmlWindow):
         
 
 
+
 class AboutHelpHtmlWindow(wx.html.HtmlWindow):
 
     def __init__(self, parent):
