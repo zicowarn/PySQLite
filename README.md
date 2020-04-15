@@ -19,7 +19,6 @@ Project characteristics
 The software currently supports Chinese, English and German. You can set the display language by changing the "DEFAULT_LANGUAGE" global variable. If you have more questions, or better suggestions. Welcome to contact me.
 
 
-
 License
 --
 
